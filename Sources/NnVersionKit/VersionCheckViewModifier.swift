@@ -25,22 +25,22 @@ struct VersionCheckViewModifier<UpdateView: View>: ViewModifier {
 }
 
 public extension View {
-    func checkingAppVersion<UpdateView: View>(bundle: Bundle, onlineVersionLoader: VersionLoader? = nil, versionNumberUpdateType: VersionNumberType = .major, @ViewBuilder updateView: @escaping () -> UpdateView) -> some View {
-        modifier(VersionCheckViewModifier(viewModel: .customInit(bundle: bundle, onlineVersionLoader: onlineVersionLoader, versionType: versionNumberUpdateType), updateView: updateView))
+    func checkingAppVersion<UpdateView: View>(bundle: Bundle, onlineVersionLoader: VersionLoader? = nil, versionNumberUpdateType: VersionNumberType = .major, onError: ((Error) -> Void)? = nil, @ViewBuilder updateView: @escaping () -> UpdateView) -> some View {
+        modifier(VersionCheckViewModifier(viewModel: .customInit(bundle: bundle, onlineVersionLoader: onlineVersionLoader, versionType: versionNumberUpdateType, onError: onError), updateView: updateView))
     }
     
-    func checkingAppVersion<UpdateView: View>(deviceVersionLoader: VersionLoader, onlineVersionLoader: VersionLoader, versionNumberUpdateType: VersionNumberType = .major, @ViewBuilder updateView: @escaping () -> UpdateView) -> some View {
-        modifier(VersionCheckViewModifier(viewModel: .init(deviceVersionLoader: deviceVersionLoader, onlineVersionLoader: onlineVersionLoader, selectedVersionNumberType: versionNumberUpdateType), updateView: updateView))
+    func checkingAppVersion<UpdateView: View>(deviceVersionLoader: VersionLoader, onlineVersionLoader: VersionLoader, versionNumberUpdateType: VersionNumberType = .major, onError: ((Error) -> Void)? = nil, @ViewBuilder updateView: @escaping () -> UpdateView) -> some View {
+        modifier(VersionCheckViewModifier(viewModel: .init(deviceVersionLoader: deviceVersionLoader, onlineVersionLoader: onlineVersionLoader, selectedVersionNumberType: versionNumberUpdateType, onError: onError), updateView: updateView))
     }
 }
 
 
 // MARK: - Extension Dependencies
 fileprivate extension VersionCheckViewModel {
-    static func customInit(bundle: Bundle, onlineVersionLoader: VersionLoader?, versionType: VersionNumberType) -> VersionCheckViewModel {
+    static func customInit(bundle: Bundle, onlineVersionLoader: VersionLoader?, versionType: VersionNumberType, onError: ((Error) -> Void)?) -> VersionCheckViewModel {
         let deviceLoader = DeviceBundleVersionStore(bundle: bundle)
         let onlineLoader = onlineVersionLoader ?? AppStoreVersionLoader(bundleId: bundle.bundleIdentifier)
         
-        return .init(deviceVersionLoader: deviceLoader, onlineVersionLoader: onlineLoader, selectedVersionNumberType: versionType)
+        return .init(deviceVersionLoader: deviceLoader, onlineVersionLoader: onlineLoader, selectedVersionNumberType: versionType, onError: onError)
     }
 }

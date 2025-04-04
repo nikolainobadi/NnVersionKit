@@ -11,11 +11,13 @@ import Foundation
 final class VersionCheckViewModel: ObservableObject {
     @Published var versionUpdateRequired = false
     
+    private let onError: ((Error) -> Void)?
     private let deviceVersionLoader: VersionLoader
     private let onlineVersionLoader: VersionLoader
     private let selectedVersionNumberType: VersionNumberType
     
-    init(deviceVersionLoader: VersionLoader, onlineVersionLoader: VersionLoader, selectedVersionNumberType: VersionNumberType) {
+    init(deviceVersionLoader: VersionLoader, onlineVersionLoader: VersionLoader, selectedVersionNumberType: VersionNumberType, onError: ((Error) -> Void)?) {
+        self.onError = onError
         self.deviceVersionLoader = deviceVersionLoader
         self.onlineVersionLoader = onlineVersionLoader
         self.selectedVersionNumberType = selectedVersionNumberType
@@ -32,8 +34,8 @@ extension VersionCheckViewModel {
                         
             versionUpdateRequired = VersionNumberHandler.compareVersions(deviceVersion: deviceVersion, onlineVersion: onlineVersion, selectedVersionNumberType: selectedVersionNumberType)
         } catch {
-            // TODO: - should handle via delegate from client
             print(error.localizedDescription)
+            onError?(error)
         }
     }
 }
