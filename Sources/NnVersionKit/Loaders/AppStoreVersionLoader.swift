@@ -1,5 +1,5 @@
 //
-//  AppStoreVersionStore.swift
+//  AppStoreVersionLoader.swift
 //  NnVersionKit
 //
 //  Created by Nikolai Nobadi on 4/3/25.
@@ -32,6 +32,6 @@ extension AppStoreVersionLoader: VersionLoader {
             throw VersionKitError.missingDeviceVersionString
         }
         
-        return try VersionNumberMapper.map(versionString)
+        return try VersionNumberHandler.makeNumber(from: versionString)
     }
 }

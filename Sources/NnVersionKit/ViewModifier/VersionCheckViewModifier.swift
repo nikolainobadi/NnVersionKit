@@ -38,7 +38,7 @@ public extension View {
 // MARK: - Extension Dependencies
 fileprivate extension VersionCheckViewModel {
     static func customInit(bundle: Bundle, onlineVersionLoader: VersionLoader?, versionType: VersionNumberType, onError: ((Error) -> Void)?) -> VersionCheckViewModel {
-        let deviceLoader = DeviceBundleVersionStore(bundle: bundle)
+        let deviceLoader = DeviceBundleVersionLoader(bundle: bundle)
         let onlineLoader = onlineVersionLoader ?? AppStoreVersionLoader(bundleId: bundle.bundleIdentifier)
         
         return .init(deviceVersionLoader: deviceLoader, onlineVersionLoader: onlineLoader, selectedVersionNumberType: versionType, onError: onError)

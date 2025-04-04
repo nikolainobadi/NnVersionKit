@@ -39,9 +39,3 @@ extension VersionCheckViewModel {
         }
     }
 }
-
-
-// MARK: - Dependencies
-public protocol VersionLoader: Sendable {
-    func loadVersionNumber() async throws -> VersionNumber
-}
