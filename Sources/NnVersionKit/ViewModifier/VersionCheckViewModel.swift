@@ -38,6 +38,7 @@ final class VersionCheckViewModel: ObservableObject {
     }
 }
 
+
 // MARK: - Actions
 extension VersionCheckViewModel {
     /// Asynchronously checks the device and online versions, and updates the `versionUpdateRequired` flag.

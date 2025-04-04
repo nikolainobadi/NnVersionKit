@@ -57,12 +57,11 @@ extension AppStoreVersionLoader: VersionLoader {
 
 
 // MARK: - Dependencies
-protocol NetworkService: Sendable {
+internal protocol NetworkService: Sendable {
     func fetchData(from url: URL) async throws -> Data
 }
 
-
-final class URLSessionNetworkService: NetworkService {
+internal final class URLSessionNetworkService: NetworkService {
     func fetchData(from url: URL) async throws -> Data {
         return try await URLSession.shared.data(from: url).0
     }

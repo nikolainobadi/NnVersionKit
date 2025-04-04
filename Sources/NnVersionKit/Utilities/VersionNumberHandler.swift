@@ -48,7 +48,8 @@ public enum VersionNumberHandler {
     }
 }
 
-// MARK: - Private
+
+// MARK: - Private Methods
 private extension VersionNumberHandler {
     /// Creates a `VersionNumber` from an array of integers.
     ///
