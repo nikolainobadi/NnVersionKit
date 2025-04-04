@@ -1,5 +1,6 @@
 # NnVersionKit
 
+![Build Status](https://github.com/nikolainobadi/NnVersionKit/actions/workflows/ci.yml/badge.svg)
 ![Swift Version](https://badgen.net/badge/swift/6.0%2B/purple)
 ![Platforms](https://img.shields.io/badge/platforms-iOS%2017%2B%20%7C%20macOS%2014%2B-blue)
 ![License](https://img.shields.io/badge/license-MIT-lightgrey)
