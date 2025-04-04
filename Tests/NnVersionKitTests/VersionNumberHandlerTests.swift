@@ -39,7 +39,7 @@ struct VersionNumberHandlerTests {
         let device = VersionNumber(majorNum: 1, minorNum: 0, patchNum: 0)
         let online = VersionNumber(majorNum: 2, minorNum: 0, patchNum: 0)
         
-        #expect(VersionNumberHandler.compareVersions(deviceVersion: device, onlineVersion: online, selectedVersionNumberType: selectedVersionNumberType))
+        #expect(VersionNumberHandler.versionUpdateIsRequired(deviceVersion: device, onlineVersion: online, selectedVersionNumberType: selectedVersionNumberType))
     }
 
     @Test("Compares minor version update")
@@ -47,9 +47,9 @@ struct VersionNumberHandlerTests {
         let device = VersionNumber(majorNum: 1, minorNum: 1, patchNum: 0)
         let online = VersionNumber(majorNum: 1, minorNum: 2, patchNum: 0)
 
-        #expect(!VersionNumberHandler.compareVersions(deviceVersion: device, onlineVersion: online, selectedVersionNumberType: .major))
-        #expect(VersionNumberHandler.compareVersions(deviceVersion: device, onlineVersion: online, selectedVersionNumberType: .minor))
-        #expect(VersionNumberHandler.compareVersions(deviceVersion: device, onlineVersion: online, selectedVersionNumberType: .patch))
+        #expect(!VersionNumberHandler.versionUpdateIsRequired(deviceVersion: device, onlineVersion: online, selectedVersionNumberType: .major))
+        #expect(VersionNumberHandler.versionUpdateIsRequired(deviceVersion: device, onlineVersion: online, selectedVersionNumberType: .minor))
+        #expect(VersionNumberHandler.versionUpdateIsRequired(deviceVersion: device, onlineVersion: online, selectedVersionNumberType: .patch))
     }
 
     @Test("Compares patch version update")
@@ -57,15 +57,15 @@ struct VersionNumberHandlerTests {
         let device = VersionNumber(majorNum: 2, minorNum: 2, patchNum: 1)
         let online = VersionNumber(majorNum: 2, minorNum: 2, patchNum: 3)
 
-        #expect(!VersionNumberHandler.compareVersions(deviceVersion: device, onlineVersion: online, selectedVersionNumberType: .major))
-        #expect(!VersionNumberHandler.compareVersions(deviceVersion: device, onlineVersion: online, selectedVersionNumberType: .minor))
-        #expect(VersionNumberHandler.compareVersions(deviceVersion: device, onlineVersion: online, selectedVersionNumberType: .patch))
+        #expect(!VersionNumberHandler.versionUpdateIsRequired(deviceVersion: device, onlineVersion: online, selectedVersionNumberType: .major))
+        #expect(!VersionNumberHandler.versionUpdateIsRequired(deviceVersion: device, onlineVersion: online, selectedVersionNumberType: .minor))
+        #expect(VersionNumberHandler.versionUpdateIsRequired(deviceVersion: device, onlineVersion: online, selectedVersionNumberType: .patch))
     }
 
     @Test("Returns false when all version numbers are the same", arguments: VersionNumberType.allCases)
     func returnsFalseIfVersionsAreEqual(selectedVersionNumberType: VersionNumberType) {
         let version = VersionNumber(majorNum: 1, minorNum: 1, patchNum: 1)
 
-        #expect(!VersionNumberHandler.compareVersions(deviceVersion: version, onlineVersion: version, selectedVersionNumberType: selectedVersionNumberType))
+        #expect(!VersionNumberHandler.versionUpdateIsRequired(deviceVersion: version, onlineVersion: version, selectedVersionNumberType: selectedVersionNumberType))
     }
 }

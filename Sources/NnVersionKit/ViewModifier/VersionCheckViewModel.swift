@@ -49,7 +49,7 @@ extension VersionCheckViewModel {
             let deviceVersion = try await deviceVersionLoader.loadVersionNumber()
             let onlineVersion = try await onlineVersionLoader.loadVersionNumber()
 
-            versionUpdateRequired = VersionNumberHandler.compareVersions(
+            versionUpdateRequired = VersionNumberHandler.versionUpdateIsRequired(
                 deviceVersion: deviceVersion,
                 onlineVersion: onlineVersion,
                 selectedVersionNumberType: selectedVersionNumberType

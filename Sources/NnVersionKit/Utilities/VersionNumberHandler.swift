@@ -32,7 +32,7 @@ public enum VersionNumberHandler {
     ///   - onlineVersion: The version available online (e.g., App Store).
     ///   - selectedVersionNumberType: The level of version comparison (major, minor, or patch).
     /// - Returns: `true` if an update is required based on the selected comparison type.
-    public static func compareVersions(deviceVersion: VersionNumber, onlineVersion: VersionNumber, selectedVersionNumberType: VersionNumberType) -> Bool {
+    public static func versionUpdateIsRequired(deviceVersion: VersionNumber, onlineVersion: VersionNumber, selectedVersionNumberType: VersionNumberType) -> Bool {
         let majorUpdate = deviceVersion.majorNum < onlineVersion.majorNum
         let minorUpdate = deviceVersion.minorNum < onlineVersion.minorNum
         let patchUpdate = deviceVersion.patchNum < onlineVersion.patchNum
