@@ -14,7 +14,7 @@ public final class DeviceBundleVersionLoader {
     /// Creates a new instance using the provided bundle.
     ///
     /// - Parameter bundle: The bundle to extract version information from.
-    init(bundle: Bundle) {
+    public init(bundle: Bundle) {
         self.bundle = bundle
     }
 }

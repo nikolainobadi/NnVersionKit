@@ -9,16 +9,26 @@ import Foundation
 
 /// A version loader that retrieves the latest app version from the App Store using the app’s bundle identifier.
 public final class AppStoreVersionLoader {
-    /// The bundle identifier used to query the App Store.
     private let bundleId: String?
+    private let service: NetworkService
 
     /// Creates a new instance of `AppStoreVersionLoader`.
     ///
     /// - Parameter bundleId: The bundle identifier of the app.
-    init(bundleId: String?) {
+    init(bundleId: String?, service: NetworkService) {
+        self.service = service
         self.bundleId = bundleId
     }
 }
+
+
+// MARK: - Init
+public extension AppStoreVersionLoader {
+    convenience init(bundleId: String?) {
+        self.init(bundleId: bundleId, service: URLSessionNetworkService())
+    }
+}
+
 
 // MARK: - VersionLoader
 extension AppStoreVersionLoader: VersionLoader {
@@ -33,7 +43,7 @@ extension AppStoreVersionLoader: VersionLoader {
             throw VersionKitError.invalidBundleId
         }
 
-        let (data, _) = try await URLSession.shared.data(from: url)
+        let data = try await service.fetchData(from: url)
 
         guard let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any],
               let results = json["results"] as? [[String: Any]],
@@ -42,5 +52,18 @@ extension AppStoreVersionLoader: VersionLoader {
         }
 
         return try VersionNumberHandler.makeNumber(from: versionString)
+    }
+}
+
+
+// MARK: - Dependencies
+protocol NetworkService: Sendable {
+    func fetchData(from url: URL) async throws -> Data
+}
+
+
+final class URLSessionNetworkService: NetworkService {
+    func fetchData(from url: URL) async throws -> Data {
+        return try await URLSession.shared.data(from: url).0
     }
 }
