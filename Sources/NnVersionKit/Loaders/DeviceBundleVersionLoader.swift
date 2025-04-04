@@ -9,11 +9,7 @@ import Foundation
 
 /// A version loader that retrieves the app version from the local bundle.
 public final class DeviceBundleVersionLoader {
-    /// The bundle to query for version information.
     private let bundle: Bundle
-
-    /// The Info.plist key used to retrieve the app's version string.
-    private let versionStringId = "CFBundleShortVersionString"
 
     /// Creates a new instance using the provided bundle.
     ///
@@ -31,10 +27,19 @@ extension DeviceBundleVersionLoader: VersionLoader {
     /// - Throws: `VersionKitError.missingDeviceVersionString` if the version string is missing or invalid.
     public func loadVersionNumber() async throws -> VersionNumber {
         guard let dict = bundle.infoDictionary,
-              let versionString = dict[versionStringId] as? String else {
+              let versionString = dict[.bundleVersionKey] as? String else {
             throw VersionKitError.missingDeviceVersionString
         }
 
         return try VersionNumberHandler.makeNumber(from: versionString)
+    }
+}
+
+
+// MARK: - Extension Dependencies
+public extension String {
+    /// The Info.plist key used to retrieve the app's version string.
+    static var bundleVersionKey: String {
+        return "CFBundleShortVersionString"
     }
 }
