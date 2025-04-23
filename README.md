@@ -36,7 +36,7 @@ This package is ideal for developers who want fine-grained control over version 
 ## Installation
 
 ```swift
-.package(url: "https://github.com/nikolainobadi/NnVersionKit", branch: "main")
+.package(url: "https://github.com/nikolainobadi/NnVersionKit", from: "1.0.0")
 ```
 
 ## Usage
