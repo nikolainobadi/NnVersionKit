@@ -20,7 +20,7 @@ This package is ideal for developers who want fine-grained control over version 
   - [Basic SwiftUI Integration](#basic-swiftui-integration)
   - [Custom Version Loaders](#custom-version-loaders)
   - [Comparing Version Numbers Manually](#comparing-version-numbers-manually)
-- [About This Project](#about-this-project)
+  - [Debug Logging](#debug-logging)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -31,6 +31,7 @@ This package is ideal for developers who want fine-grained control over version 
 - Compare versions at major, minor, or patch level
 - Async/await-powered version loading
 - SwiftUI view modifiers to trigger update UIs
+- Opt-in debug logging for troubleshooting version checks
 - Fully tested with lightweight, modern syntax
 
 ## Installation
@@ -44,7 +45,7 @@ This package is ideal for developers who want fine-grained control over version 
 ### Basic SwiftUI Integration
 Just pass in the main `Bundle` of your app to compare the device version with the current version from the App Store.
 
-By default, the version number being compared will be the **major** number, but you can pass in a different `VersionNumberType`if you want updates to trigger for **minor** or **patch** changes.
+By default, the version number being compared will be the **major** number, but you can pass in a different `VersionNumberType` if you want updates to trigger for **minor** or **patch** changes.
 ```swift
 import NnVersionKit
 
@@ -71,7 +72,7 @@ var body: some View {
         }
 }
 ```
-Your custom implemntation would simply have to return a `VersionNumber` to conform to `VersionLoader`:
+Your custom implementation would simply have to return a `VersionNumber` to conform to `VersionLoader`:
 
 ```swift
 public protocol VersionLoader: Sendable {
@@ -88,9 +89,46 @@ let onlineVersionLoader = AppStoreVersionLoader(bundleId: Bundle.main.bundleIden
 
 let deviceVersion = try await deviceVersionLoader.loadVersionNumber()
 let onlineVersion = try await onlineVersionLoader.loadVersionNumber()
-let updateRequired = VersionNumberHandler.versionUpdateIsRequired(deviceVersion: deviceVersion, onlineVersion: onlineVersion)
+let updateRequired = VersionNumberHandler.versionUpdateIsRequired(deviceVersion: deviceVersion, onlineVersion: onlineVersion, selectedVersionNumberType: .major)
 
 print("version update required:", updateRequired)
+```
+
+### Debug Logging
+Version checks are completely silent by default — nothing is printed to the console. Pass `debugEnabled: true` to print detailed version check information, useful for troubleshooting why an update prompt is (or isn't) appearing.
+
+```swift
+var body: some View {
+    ContentView()
+        .checkingAppVersion(bundle: .main, debugEnabled: true) {
+            Text("Please update the app!")
+        }
+}
+```
+
+Console output when enabled:
+
+```
+[NnVersionKit] Starting version check (comparison level: major)
+[NnVersionKit] Device version string from bundle: 1.2.3
+[NnVersionKit] Parsed version string '1.2.3' into 1.2.3
+[NnVersionKit] Loaded device version: 1.2.3
+[NnVersionKit] Fetching App Store version from https://itunes.apple.com/lookup?bundleId=com.example.app
+[NnVersionKit] Received 4821 bytes from App Store lookup
+[NnVersionKit] App Store version string: 2.0.0
+[NnVersionKit] Parsed version string '2.0.0' into 2.0.0
+[NnVersionKit] Loaded online version: 2.0.0
+[NnVersionKit] Comparing device 1.2.3 to online 2.0.0 at major level (major: true, minor: false, patch: false)
+[NnVersionKit] Version update required: true
+```
+
+Failure paths are logged as well (invalid bundle ID, missing `Info.plist` version, unparseable responses). Errors are always delivered to your `onError` handler regardless of the debug setting.
+
+The same flag is available when constructing loaders directly:
+
+```swift
+let deviceVersionLoader = DeviceBundleVersionLoader(bundle: .main, debugEnabled: true)
+let onlineVersionLoader = AppStoreVersionLoader(bundleId: Bundle.main.bundleIdentifier, debugEnabled: true)
 ```
 
 ## Contributing
