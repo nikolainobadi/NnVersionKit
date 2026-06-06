@@ -10,12 +10,16 @@ import Foundation
 /// A version loader that retrieves the app version from the local bundle.
 public final class DeviceBundleVersionLoader {
     private let bundle: Bundle
+    private let debugEnabled: Bool
 
     /// Creates a new instance using the provided bundle.
     ///
-    /// - Parameter bundle: The bundle to extract version information from.
-    public init(bundle: Bundle) {
+    /// - Parameters:
+    ///   - bundle: The bundle to extract version information from.
+    ///   - debugEnabled: When `true`, prints version loading details to the console. Nothing is printed when `false` (default).
+    public init(bundle: Bundle, debugEnabled: Bool = false) {
         self.bundle = bundle
+        self.debugEnabled = debugEnabled
     }
 }
 
@@ -28,10 +32,23 @@ extension DeviceBundleVersionLoader: VersionLoader {
     public func loadVersionNumber() async throws -> VersionNumber {
         guard let dict = bundle.infoDictionary,
               let versionString = dict[.bundleVersionKey] as? String else {
+            log("Missing '\(String.bundleVersionKey)' in bundle Info.plist")
             throw VersionKitError.missingDeviceVersionString
         }
 
-        return try VersionNumberHandler.makeNumber(from: versionString)
+        log("Device version string from bundle: \(versionString)")
+        return try VersionNumberHandler.makeNumber(from: versionString, debugEnabled: debugEnabled)
+    }
+}
+
+
+// MARK: - Private Methods
+private extension DeviceBundleVersionLoader {
+    /// Prints a message to the console when debug logging is enabled.
+    ///
+    /// - Parameter message: The message to print.
+    func log(_ message: String) {
+        VersionKitLogger.log(message, isEnabled: debugEnabled)
     }
 }
 

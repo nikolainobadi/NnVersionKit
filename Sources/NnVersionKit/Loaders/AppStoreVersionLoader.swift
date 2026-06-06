@@ -10,22 +10,32 @@ import Foundation
 /// A version loader that retrieves the latest app version from the App Store using the app’s bundle identifier.
 public final class AppStoreVersionLoader {
     private let bundleId: String?
+    private let debugEnabled: Bool
     private let service: NetworkService
 
     /// Creates a new instance of `AppStoreVersionLoader`.
     ///
-    /// - Parameter bundleId: The bundle identifier of the app.
-    init(bundleId: String?, service: NetworkService) {
+    /// - Parameters:
+    ///   - bundleId: The bundle identifier of the app.
+    ///   - debugEnabled: When `true`, prints version loading details to the console. Nothing is printed when `false`.
+    ///   - service: The network service used to fetch data from the App Store.
+    init(bundleId: String?, debugEnabled: Bool = false, service: NetworkService) {
         self.service = service
         self.bundleId = bundleId
+        self.debugEnabled = debugEnabled
     }
 }
 
 
 // MARK: - Init
 public extension AppStoreVersionLoader {
-    convenience init(bundleId: String?) {
-        self.init(bundleId: bundleId, service: URLSessionNetworkService())
+    /// Creates a new instance of `AppStoreVersionLoader`.
+    ///
+    /// - Parameters:
+    ///   - bundleId: The bundle identifier of the app.
+    ///   - debugEnabled: When `true`, prints version loading details to the console. Nothing is printed when `false` (default).
+    convenience init(bundleId: String?, debugEnabled: Bool = false) {
+        self.init(bundleId: bundleId, debugEnabled: debugEnabled, service: URLSessionNetworkService())
     }
 }
 
@@ -40,18 +50,34 @@ extension AppStoreVersionLoader: VersionLoader {
     public func loadVersionNumber() async throws -> VersionNumber {
         guard let bundleId = bundleId,
               let url = URL(string: "https://itunes.apple.com/lookup?bundleId=\(bundleId)") else {
+            log("Missing or invalid bundle ID, cannot fetch App Store version")
             throw VersionKitError.invalidBundleId
         }
 
+        log("Fetching App Store version from \(url.absoluteString)")
         let data = try await service.fetchData(from: url)
+        log("Received \(data.count) bytes from App Store lookup")
 
         guard let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any],
               let results = json["results"] as? [[String: Any]],
               let versionString = results.first?["version"] as? String else {
+            log("Could not parse version string from App Store response")
             throw VersionKitError.missingDeviceVersionString
         }
 
-        return try VersionNumberHandler.makeNumber(from: versionString)
+        log("App Store version string: \(versionString)")
+        return try VersionNumberHandler.makeNumber(from: versionString, debugEnabled: debugEnabled)
+    }
+}
+
+
+// MARK: - Private Methods
+private extension AppStoreVersionLoader {
+    /// Prints a message to the console when debug logging is enabled.
+    ///
+    /// - Parameter message: The message to print.
+    func log(_ message: String) {
+        VersionKitLogger.log(message, isEnabled: debugEnabled)
     }
 }
 

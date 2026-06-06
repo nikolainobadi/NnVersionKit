@@ -11,18 +11,25 @@ import Foundation
 public enum VersionNumberHandler {
     /// Converts a version string (e.g., "1.2.3") into a `VersionNumber`.
     ///
-    /// - Parameter versionString: The version string to convert.
+    /// - Parameters:
+    ///   - versionString: The version string to convert.
+    ///   - debugEnabled: When `true`, prints parsing details to the console. Nothing is printed when `false` (default).
     /// - Returns: A `VersionNumber` constructed from the string.
     /// - Throws: `VersionKitError.missingNumber` if any segment of the version string is not a valid number.
-    public static func makeNumber(from versionString: String) throws -> VersionNumber {
+    public static func makeNumber(from versionString: String, debugEnabled: Bool = false) throws -> VersionNumber {
         let noDecimals = versionString.components(separatedBy: ".")
         let array = noDecimals.compactMap { Int($0) }
 
         guard array.count == noDecimals.count else {
+            VersionKitLogger.log("Failed to parse version string '\(versionString)', contains non-numeric segments", isEnabled: debugEnabled)
             throw VersionKitError.missingNumber
         }
 
-        return makeVersionNumber(from: array)
+        let number = makeVersionNumber(from: array)
+
+        VersionKitLogger.log("Parsed version string '\(versionString)' into \(number.stringFormat)", isEnabled: debugEnabled)
+
+        return number
     }
 
     /// Compares two version numbers using a selected comparison type.
@@ -31,11 +38,14 @@ public enum VersionNumberHandler {
     ///   - deviceVersion: The version currently on the device.
     ///   - onlineVersion: The version available online (e.g., App Store).
     ///   - selectedVersionNumberType: The level of version comparison (major, minor, or patch).
+    ///   - debugEnabled: When `true`, prints comparison details to the console. Nothing is printed when `false` (default).
     /// - Returns: `true` if an update is required based on the selected comparison type.
-    public static func versionUpdateIsRequired(deviceVersion: VersionNumber, onlineVersion: VersionNumber, selectedVersionNumberType: VersionNumberType) -> Bool {
+    public static func versionUpdateIsRequired(deviceVersion: VersionNumber, onlineVersion: VersionNumber, selectedVersionNumberType: VersionNumberType, debugEnabled: Bool = false) -> Bool {
         let majorUpdate = deviceVersion.majorNum < onlineVersion.majorNum
         let minorUpdate = deviceVersion.minorNum < onlineVersion.minorNum
         let patchUpdate = deviceVersion.patchNum < onlineVersion.patchNum
+
+        VersionKitLogger.log("Comparing device \(deviceVersion.stringFormat) to online \(onlineVersion.stringFormat) at \(selectedVersionNumberType) level (major: \(majorUpdate), minor: \(minorUpdate), patch: \(patchUpdate))", isEnabled: debugEnabled)
 
         switch selectedVersionNumberType {
         case .major:
