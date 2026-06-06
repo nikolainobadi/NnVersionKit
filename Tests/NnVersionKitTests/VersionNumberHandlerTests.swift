@@ -9,8 +9,8 @@ import Testing
 @testable import NnVersionKit
 
 struct VersionNumberHandlerTests {
-    @Test("Parses valid version string")
-    func parsesValidVersionString() throws {
+    @Test
+    func `Parses valid version string`() throws {
         let version = try VersionNumberHandler.makeNumber(from: "1.2.3")
         
         #expect(version.majorNum == 1)
@@ -18,8 +18,8 @@ struct VersionNumberHandlerTests {
         #expect(version.patchNum == 3)
     }
     
-    @Test("Parses version string with missing minor and patch")
-    func fillsMissingMinorAndPatchWithZeros() throws {
+    @Test
+    func `Fills missing minor and patch numbers with zeros`() throws {
         let version = try VersionNumberHandler.makeNumber(from: "5")
         
         #expect(version.majorNum == 5)
@@ -27,23 +27,27 @@ struct VersionNumberHandlerTests {
         #expect(version.patchNum == 0)
     }
     
-    @Test("Throws error when version string contains non-integers")
-    func throwsOnInvalidVersionString() {
+    @Test
+    func `Throws error when version string contains non-integers`() {
         #expect(throws: VersionKitError.missingNumber) {
             try VersionNumberHandler.makeNumber(from: "1.two.3")
         }
     }
+}
 
-    @Test("Compares major version update", arguments: VersionNumberType.allCases)
-    func detectsMajorUpdate(selectedVersionNumberType: VersionNumberType) {
+
+// MARK: - Update Comparison
+extension VersionNumberHandlerTests {
+    @Test(arguments: VersionNumberType.allCases)
+    func `Requires update when online major version is higher regardless of selected type`(selectedVersionNumberType: VersionNumberType) {
         let device = VersionNumber(majorNum: 1, minorNum: 0, patchNum: 0)
         let online = VersionNumber(majorNum: 2, minorNum: 0, patchNum: 0)
         
         #expect(VersionNumberHandler.versionUpdateIsRequired(deviceVersion: device, onlineVersion: online, selectedVersionNumberType: selectedVersionNumberType))
     }
 
-    @Test("Compares minor version update")
-    func detectsMinorUpdate() {
+    @Test
+    func `Detects minor version increase only at minor and patch levels`() {
         let device = VersionNumber(majorNum: 1, minorNum: 1, patchNum: 0)
         let online = VersionNumber(majorNum: 1, minorNum: 2, patchNum: 0)
 
@@ -52,8 +56,8 @@ struct VersionNumberHandlerTests {
         #expect(VersionNumberHandler.versionUpdateIsRequired(deviceVersion: device, onlineVersion: online, selectedVersionNumberType: .patch))
     }
 
-    @Test("Compares patch version update")
-    func detectsPatchUpdate() {
+    @Test
+    func `Detects patch version increase only at patch level`() {
         let device = VersionNumber(majorNum: 2, minorNum: 2, patchNum: 1)
         let online = VersionNumber(majorNum: 2, minorNum: 2, patchNum: 3)
 
@@ -62,8 +66,8 @@ struct VersionNumberHandlerTests {
         #expect(VersionNumberHandler.versionUpdateIsRequired(deviceVersion: device, onlineVersion: online, selectedVersionNumberType: .patch))
     }
 
-    @Test("Returns false when all version numbers are the same", arguments: VersionNumberType.allCases)
-    func returnsFalseIfVersionsAreEqual(selectedVersionNumberType: VersionNumberType) {
+    @Test(arguments: VersionNumberType.allCases)
+    func `Does not require update when versions are equal`(selectedVersionNumberType: VersionNumberType) {
         let version = VersionNumber(majorNum: 1, minorNum: 1, patchNum: 1)
 
         #expect(!VersionNumberHandler.versionUpdateIsRequired(deviceVersion: version, onlineVersion: version, selectedVersionNumberType: selectedVersionNumberType))

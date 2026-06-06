@@ -10,10 +10,9 @@ import Foundation
 @testable import NnVersionKit
 
 struct DeviceBundleVersionLoaderTests {
-    @Test("Parses version string from bundle correctly")
-    func loadsVersionFromBundle() async throws {
-        let bundle = TestBundle(info: [.bundleVersionKey: "1.2.3"])
-        let sut = DeviceBundleVersionLoader(bundle: bundle)
+    @Test
+    func `Parses version string from bundle correctly`() async throws {
+        let sut = makeSUT(info: [.bundleVersionKey: "1.2.3"])
 
         let version = try await sut.loadVersionNumber()
 
@@ -22,20 +21,18 @@ struct DeviceBundleVersionLoaderTests {
         #expect(version.patchNum == 3)
     }
 
-    @Test("Throws if version string is missing")
-    func throwsWhenVersionStringMissing() async {
-        let bundle = TestBundle(info: [:])
-        let sut = DeviceBundleVersionLoader(bundle: bundle)
+    @Test
+    func `Throws if version string is missing`() async {
+        let sut = makeSUT()
 
         await #expect(throws: VersionKitError.missingDeviceVersionString) {
             try await sut.loadVersionNumber()
         }
     }
 
-    @Test("Throws if version string is not a string")
-    func throwsWhenVersionStringIsNotAString() async {
-        let bundle = TestBundle(info: [.bundleVersionKey: 123])
-        let sut = DeviceBundleVersionLoader(bundle: bundle)
+    @Test
+    func `Throws if version string is not a string`() async {
+        let sut = makeSUT(info: [.bundleVersionKey: 123])
 
         await #expect(throws: VersionKitError.missingDeviceVersionString) {
             try await sut.loadVersionNumber()
@@ -46,7 +43,7 @@ struct DeviceBundleVersionLoaderTests {
 
 // MARK: - Helpers
 private extension DeviceBundleVersionLoaderTests {
-    final class TestBundle: Bundle, @unchecked Sendable {
+    final class MockBundle: Bundle, @unchecked Sendable {
         private let customInfo: [String: Any]?
 
         init(info: [String: Any]?) {
@@ -57,5 +54,13 @@ private extension DeviceBundleVersionLoaderTests {
         override var infoDictionary: [String: Any]? {
             return customInfo
         }
+    }
+}
+
+
+// MARK: - SUT
+private extension DeviceBundleVersionLoaderTests {
+    func makeSUT(info: [String: Any] = [:]) -> DeviceBundleVersionLoader {
+        return DeviceBundleVersionLoader(bundle: MockBundle(info: info))
     }
 }
