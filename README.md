@@ -7,7 +7,7 @@
 
 ## Overview
 
-**NnVersionKit** is a lightweight Swift package for detecting app version changes. It helps compare the locally installed version of your app with the version available on the App Store, allowing you to prompt users for updates based on major, minor, or patch version differences.
+**NnVersionKit** is a lightweight Swift package for detecting app version changes. It helps compare the locally installed version of your app with the version available on the App Store, prompting users to update based on a configurable policy — force on every new major version, or tolerate a window of recent minor/patch releases before requiring an update.
 
 This package is ideal for developers who want fine-grained control over version update logic in SwiftUI-based apps.
 
@@ -37,7 +37,7 @@ This package is ideal for developers who want fine-grained control over version 
 ## Installation
 
 ```swift
-.package(url: "https://github.com/nikolainobadi/NnVersionKit", from: "1.0.0")
+.package(url: "https://github.com/nikolainobadi/NnVersionKit", from: "2.0.0")
 ```
 
 ## Usage
