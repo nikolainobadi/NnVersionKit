@@ -7,7 +7,7 @@
 
 ## Overview
 
-**NnVersionKit** is a lightweight Swift package for detecting app version changes. It helps compare the locally installed version of your app with the version available on the App Store, allowing you to prompt users for updates based on major, minor, or patch version differences.
+**NnVersionKit** is a lightweight Swift package for detecting app version changes. It helps compare the locally installed version of your app with the version available on the App Store, prompting users to update based on a configurable policy — force on every new major version, or tolerate a window of recent minor/patch releases before requiring an update.
 
 This package is ideal for developers who want fine-grained control over version update logic in SwiftUI-based apps.
 
@@ -18,8 +18,10 @@ This package is ideal for developers who want fine-grained control over version 
 - [Installation](#installation)
 - [Usage](#usage)
   - [Basic SwiftUI Integration](#basic-swiftui-integration)
+  - [Responding to an Available Update](#responding-to-an-available-update)
   - [Custom Version Loaders](#custom-version-loaders)
   - [Comparing Version Numbers Manually](#comparing-version-numbers-manually)
+  - [UI Testing](#ui-testing)
   - [Debug Logging](#debug-logging)
 - [Contributing](#contributing)
 - [License](#license)
@@ -28,16 +30,18 @@ This package is ideal for developers who want fine-grained control over version 
 
 - Retrieve current app version from the local `Info.plist`
 - Fetch latest version info from the App Store
-- Compare versions at major, minor, or patch level
+- Force updates by policy — major-only, or tolerate a window of recent minor/patch releases
+- A status callback to detect when an update is available but not yet forced
 - Async/await-powered version loading
 - SwiftUI view modifiers to trigger update UIs
+- Seed device and online versions for deterministic UI testing
 - Opt-in debug logging for troubleshooting version checks
 - Fully tested with lightweight, modern syntax
 
 ## Installation
 
 ```swift
-.package(url: "https://github.com/nikolainobadi/NnVersionKit", from: "1.0.0")
+.package(url: "https://github.com/nikolainobadi/NnVersionKit", from: "2.0.0")
 ```
 
 ## Usage
@@ -45,14 +49,70 @@ This package is ideal for developers who want fine-grained control over version 
 ### Basic SwiftUI Integration
 Just pass in the main `Bundle` of your app to compare the device version with the current version from the App Store.
 
-By default, the version number being compared will be the **major** number, but you can pass in a different `VersionNumberType` if you want updates to trigger for **minor** or **patch** changes.
+By default, only a new **major** version forces an update (`.majorOnly`). Pass a different `VersionUpdatePolicy` to also force updates once the device falls too far behind at the **minor** or **patch** level.
 ```swift
 import NnVersionKit
 
 var body: some View {
     ContentView()
-        .checkingAppVersion(bundle: .main, versionNumberUpdateType: .major) { 
+        .checkingAppVersion(bundle: .main, updatePolicy: .majorOnly) {
             Text("Please update the app!")
+        }
+}
+```
+
+#### Tolerating a range of recent versions
+`.minor` and `.patch` let clients stay a few releases behind the latest before an update is forced. A new major version always forces an update under every policy.
+
+```swift
+// Latest is 4.35.0. Force an update only once the device is more than 4 minor
+// releases behind — i.e. anything older than 4.31.x. Patch differences are ignored.
+.checkingAppVersion(bundle: .main, updatePolicy: .minor(allowedPreviousVersions: 4)) {
+    Text("Please update the app!")
+}
+```
+
+`allowedPreviousVersions: 0` requires the device to be on the latest version at that level. `.patch` additionally forces an update on any new minor version, since patch numbers reset per minor.
+
+### Responding to an Available Update
+A forced update replaces your content with the update view. But when the device is behind yet still **within** the accepted range, you often want a softer, non-blocking nudge instead. Pass an `onStatus` handler to receive the result of every check along with the online version.
+
+```swift
+@State private var availableVersion: VersionNumber?
+
+var body: some View {
+    ContentView()
+        .checkingAppVersion(bundle: .main, updatePolicy: .minor(allowedPreviousVersions: 4)) {
+            Text("Please update the app!")
+        }
+        // onStatus fires for every check; updateView still handles the forced case.
+        .checkingAppVersion(bundle: .main, onStatus: { status, onlineVersion in
+            availableVersion = status == .updateAvailable ? onlineVersion : nil
+        }) {
+            Text("Please update the app!")
+        }
+}
+```
+
+`VersionUpdateStatus` has three cases: `.upToDate`, `.updateAvailable` (behind but allowed), and `.updateRequired` (forced). For non-SwiftUI code, `VersionNumberHandler.versionStatus(deviceVersion:onlineVersion:policy:)` returns the same value.
+
+#### Owning the update UI yourself
+There are two ways to handle an update, and you pick by whether you pass an `updateView`:
+
+1. **Let NnVersionKit present it** — provide `updateView`, and it replaces your content when an update is required (the examples above).
+2. **Handle everything yourself** — omit `updateView` and pass `onStatus`. Your content is never replaced; you present the forced update, the soft nudge, or anything else however you like.
+
+```swift
+@State private var forcedUpdateVersion: VersionNumber?
+
+var body: some View {
+    ContentView()
+        // No updateView — NnVersionKit never swaps your content.
+        .checkingAppVersion(bundle: .main, updatePolicy: .minor(allowedPreviousVersions: 4), onStatus: { status, onlineVersion in
+            forcedUpdateVersion = status == .updateRequired ? onlineVersion : nil
+        })
+        .fullScreenCover(item: $forcedUpdateVersion) { version in
+            MyForcedUpdateScreen(version: version)
         }
 }
 ```
@@ -89,10 +149,31 @@ let onlineVersionLoader = AppStoreVersionLoader(bundleId: Bundle.main.bundleIden
 
 let deviceVersion = try await deviceVersionLoader.loadVersionNumber()
 let onlineVersion = try await onlineVersionLoader.loadVersionNumber()
-let updateRequired = VersionNumberHandler.versionUpdateIsRequired(deviceVersion: deviceVersion, onlineVersion: onlineVersion, selectedVersionNumberType: .major)
+let updateRequired = VersionNumberHandler.versionUpdateIsRequired(deviceVersion: deviceVersion, onlineVersion: onlineVersion, policy: .majorOnly)
 
 print("version update required:", updateRequired)
 ```
+
+### UI Testing
+To drive the update UI deterministically in UI tests, seed the device and/or online version through the launch environment. Opt in with `enableUITestSeeding` on the bundle modifier:
+
+```swift
+ContentView()
+    .checkingAppVersion(bundle: .main, updatePolicy: .majorOnly, enableUITestSeeding: true) {
+        Text("Please update the app!")
+    }
+```
+
+In the UI test, set the seeded versions before launching. The helper only sets its own keys, so it is safe to **merge** alongside any other launch-environment seeding you do:
+
+```swift
+app.launchEnvironment.merge(
+    NnVersionKitEnvironment.seedValues(device: "1.0.0", online: "2.0.0")
+) { _, new in new }
+app.launch()
+```
+
+With `device 1.0.0 / online 2.0.0` the forced update view appears; `1.0.0 / 1.5.0` under a tolerant policy exercises the `.updateAvailable` path instead. Either version may be omitted to leave the real loader (bundle or App Store) in place. For non-test sources where the version is already known, `StaticVersionLoader(version:)` can be passed to the two-loader overload directly.
 
 ### Debug Logging
 Version checks are completely silent by default — nothing is printed to the console. Pass `debugEnabled: true` to print detailed version check information, useful for troubleshooting why an update prompt is (or isn't) appearing.
@@ -109,7 +190,7 @@ var body: some View {
 Console output when enabled:
 
 ```
-[NnVersionKit] Starting version check (comparison level: major)
+[NnVersionKit] Starting version check (policy: majorOnly)
 [NnVersionKit] Device version string from bundle: 1.2.3
 [NnVersionKit] Parsed version string '1.2.3' into 1.2.3
 [NnVersionKit] Loaded device version: 1.2.3
@@ -118,7 +199,7 @@ Console output when enabled:
 [NnVersionKit] App Store version string: 2.0.0
 [NnVersionKit] Parsed version string '2.0.0' into 2.0.0
 [NnVersionKit] Loaded online version: 2.0.0
-[NnVersionKit] Comparing device 1.2.3 to online 2.0.0 at major level (major: true, minor: false, patch: false)
+[NnVersionKit] Comparing device 1.2.3 to online 2.0.0 under policy majorOnly (update required: true)
 [NnVersionKit] Version update required: true
 ```
 

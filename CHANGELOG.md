@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-06-19
+
+### Added
+- `VersionUpdatePolicy`, a public enum controlling how far behind the latest version a device may fall before an update is forced. `.majorOnly` forces an update only on a new major version; `.minor(allowedPreviousVersions:)` and `.patch(allowedPreviousVersions:)` additionally force an update once the device falls more than the allowed number of minor or patch releases behind the latest.
+- `VersionUpdateStatus` and a general `onStatus` callback on both `checkingAppVersion` view modifiers, surfacing whether the device is `upToDate`, behind but within policy (`updateAvailable`), or `updateRequired`. Use it to show a non-blocking "update available" prompt when a forced update is not warranted. The callback type is the public `VersionStatusHandler` typealias. `VersionNumberHandler.versionStatus(...)` exposes the same classification for non-SwiftUI callers, and `VersionNumber` now conforms to `Comparable` and `Identifiable`.
+- Report-only `checkingAppVersion` overloads that omit `updateView`: the content is never replaced and `onStatus` reports every state, so a client can present the forced update (and any soft prompt) entirely on its own. Provide an `updateView` to let NnVersionKit present the forced screen, or omit it to own all presentation — `VersionNumber: Identifiable` makes `.sheet(item:)` / `.fullScreenCover(item:)` straightforward.
+- `StaticVersionLoader`, a `VersionLoader` returning a fixed version, plus `NnVersionKitEnvironment` for seeding the device and/or online version through the launch environment in UI tests. The bundle `checkingAppVersion` overload gains an opt-in `enableUITestSeeding` flag that applies the seeded versions. Seeding only ever sets its own namespaced keys, so it composes with other launch-environment seeders.
+
+### Changed
+- **Breaking:** The `checkingAppVersion` view modifiers now take an `updatePolicy: VersionUpdatePolicy` parameter (default `.majorOnly`) in place of the previous `versionNumberUpdateType: VersionNumberType` parameter.
+- **Breaking:** `VersionNumberHandler.versionUpdateIsRequired(...)` now takes a `policy: VersionUpdatePolicy` argument instead of `selectedVersionNumberType: VersionNumberType`.
+
+### Removed
+- **Breaking:** `VersionNumberType` is no longer part of the public API. Replace `.major`, `.minor`, and `.patch` usage with the corresponding `VersionUpdatePolicy` cases.
+
 ## [1.1.0] - 2026-06-06
 
 ### Added
@@ -30,6 +45,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Optional `onError` handler for version check failures.
 - Unit test suite and GitHub Actions CI workflow.
 
-[Unreleased]: https://github.com/nikolainobadi/NnVersionKit/compare/1.1.0...HEAD
+[Unreleased]: https://github.com/nikolainobadi/NnVersionKit/compare/2.0.0...HEAD
+[2.0.0]: https://github.com/nikolainobadi/NnVersionKit/compare/1.1.0...2.0.0
 [1.1.0]: https://github.com/nikolainobadi/NnVersionKit/compare/v1.0.0...1.1.0
 [1.0.0]: https://github.com/nikolainobadi/NnVersionKit/releases/tag/v1.0.0

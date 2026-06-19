@@ -36,40 +36,181 @@ struct VersionNumberHandlerTests {
 }
 
 
-// MARK: - Update Comparison
+// MARK: - Major-Only Policy
 extension VersionNumberHandlerTests {
-    @Test(arguments: VersionNumberType.allCases)
-    func `Requires update when online major version is higher regardless of selected type`(selectedVersionNumberType: VersionNumberType) {
-        let device = VersionNumber(majorNum: 1, minorNum: 0, patchNum: 0)
+    @Test
+    func `Forces update under major-only policy when online major is higher`() {
+        let device = VersionNumber(majorNum: 1, minorNum: 9, patchNum: 9)
         let online = VersionNumber(majorNum: 2, minorNum: 0, patchNum: 0)
-        
-        #expect(VersionNumberHandler.versionUpdateIsRequired(deviceVersion: device, onlineVersion: online, selectedVersionNumberType: selectedVersionNumberType))
+
+        #expect(VersionNumberHandler.versionUpdateIsRequired(deviceVersion: device, onlineVersion: online, policy: .majorOnly))
     }
 
     @Test
-    func `Detects minor version increase only at minor and patch levels`() {
+    func `Ignores minor and patch differences under major-only policy`() {
+        let device = VersionNumber(majorNum: 1, minorNum: 0, patchNum: 0)
+        let online = VersionNumber(majorNum: 1, minorNum: 9, patchNum: 9)
+
+        #expect(!VersionNumberHandler.versionUpdateIsRequired(deviceVersion: device, onlineVersion: online, policy: .majorOnly))
+    }
+}
+
+
+// MARK: - Minor Window Policy
+extension VersionNumberHandlerTests {
+    @Test
+    func `Forces update when device falls below the minor window`() {
+        let device = VersionNumber(majorNum: 4, minorNum: 30, patchNum: 0)
+        let online = VersionNumber(majorNum: 4, minorNum: 35, patchNum: 0)
+
+        #expect(VersionNumberHandler.versionUpdateIsRequired(deviceVersion: device, onlineVersion: online, policy: .minor(allowedPreviousVersions: 4)))
+    }
+
+    @Test
+    func `Allows device sitting exactly at the minor window floor`() {
+        let device = VersionNumber(majorNum: 4, minorNum: 31, patchNum: 0)
+        let online = VersionNumber(majorNum: 4, minorNum: 35, patchNum: 0)
+
+        #expect(!VersionNumberHandler.versionUpdateIsRequired(deviceVersion: device, onlineVersion: online, policy: .minor(allowedPreviousVersions: 4)))
+    }
+
+    @Test
+    func `Ignores patch differences within an accepted minor`() {
+        let device = VersionNumber(majorNum: 4, minorNum: 31, patchNum: 9)
+        let online = VersionNumber(majorNum: 4, minorNum: 35, patchNum: 0)
+
+        #expect(!VersionNumberHandler.versionUpdateIsRequired(deviceVersion: device, onlineVersion: online, policy: .minor(allowedPreviousVersions: 4)))
+    }
+
+    @Test
+    func `Requires the latest minor when no previous minors are allowed`() {
         let device = VersionNumber(majorNum: 1, minorNum: 1, patchNum: 0)
         let online = VersionNumber(majorNum: 1, minorNum: 2, patchNum: 0)
 
-        #expect(!VersionNumberHandler.versionUpdateIsRequired(deviceVersion: device, onlineVersion: online, selectedVersionNumberType: .major))
-        #expect(VersionNumberHandler.versionUpdateIsRequired(deviceVersion: device, onlineVersion: online, selectedVersionNumberType: .minor))
-        #expect(VersionNumberHandler.versionUpdateIsRequired(deviceVersion: device, onlineVersion: online, selectedVersionNumberType: .patch))
+        #expect(VersionNumberHandler.versionUpdateIsRequired(deviceVersion: device, onlineVersion: online, policy: .minor(allowedPreviousVersions: 0)))
     }
 
     @Test
-    func `Detects patch version increase only at patch level`() {
-        let device = VersionNumber(majorNum: 2, minorNum: 2, patchNum: 1)
-        let online = VersionNumber(majorNum: 2, minorNum: 2, patchNum: 3)
+    func `Never forces update when the minor window exceeds available history`() {
+        let device = VersionNumber(majorNum: 1, minorNum: 0, patchNum: 0)
+        let online = VersionNumber(majorNum: 1, minorNum: 2, patchNum: 0)
 
-        #expect(!VersionNumberHandler.versionUpdateIsRequired(deviceVersion: device, onlineVersion: online, selectedVersionNumberType: .major))
-        #expect(!VersionNumberHandler.versionUpdateIsRequired(deviceVersion: device, onlineVersion: online, selectedVersionNumberType: .minor))
-        #expect(VersionNumberHandler.versionUpdateIsRequired(deviceVersion: device, onlineVersion: online, selectedVersionNumberType: .patch))
+        #expect(!VersionNumberHandler.versionUpdateIsRequired(deviceVersion: device, onlineVersion: online, policy: .minor(allowedPreviousVersions: 10)))
     }
 
-    @Test(arguments: VersionNumberType.allCases)
-    func `Does not require update when versions are equal`(selectedVersionNumberType: VersionNumberType) {
+    @Test
+    func `Treats a negative minor window as requiring the latest minor`() {
+        let device = VersionNumber(majorNum: 1, minorNum: 1, patchNum: 0)
+        let online = VersionNumber(majorNum: 1, minorNum: 2, patchNum: 0)
+
+        #expect(VersionNumberHandler.versionUpdateIsRequired(deviceVersion: device, onlineVersion: online, policy: .minor(allowedPreviousVersions: -5)))
+    }
+}
+
+
+// MARK: - Patch Window Policy
+extension VersionNumberHandlerTests {
+    @Test
+    func `Forces update when device falls below the patch window`() {
+        let device = VersionNumber(majorNum: 1, minorNum: 4, patchNum: 7)
+        let online = VersionNumber(majorNum: 1, minorNum: 4, patchNum: 10)
+
+        #expect(VersionNumberHandler.versionUpdateIsRequired(deviceVersion: device, onlineVersion: online, policy: .patch(allowedPreviousVersions: 2)))
+    }
+
+    @Test
+    func `Allows device sitting exactly at the patch window floor`() {
+        let device = VersionNumber(majorNum: 1, minorNum: 4, patchNum: 8)
+        let online = VersionNumber(majorNum: 1, minorNum: 4, patchNum: 10)
+
+        #expect(!VersionNumberHandler.versionUpdateIsRequired(deviceVersion: device, onlineVersion: online, policy: .patch(allowedPreviousVersions: 2)))
+    }
+
+    @Test
+    func `Forces update on any new minor under a patch policy`() {
+        let device = VersionNumber(majorNum: 1, minorNum: 3, patchNum: 99)
+        let online = VersionNumber(majorNum: 1, minorNum: 4, patchNum: 0)
+
+        #expect(VersionNumberHandler.versionUpdateIsRequired(deviceVersion: device, onlineVersion: online, policy: .patch(allowedPreviousVersions: 2)))
+    }
+
+    @Test
+    func `Requires the latest patch when no previous patches are allowed`() {
+        let device = VersionNumber(majorNum: 1, minorNum: 0, patchNum: 0)
+        let online = VersionNumber(majorNum: 1, minorNum: 0, patchNum: 1)
+
+        #expect(VersionNumberHandler.versionUpdateIsRequired(deviceVersion: device, onlineVersion: online, policy: .patch(allowedPreviousVersions: 0)))
+    }
+}
+
+
+// MARK: - Policy Baselines
+extension VersionNumberHandlerTests {
+    @Test(arguments: [VersionUpdatePolicy.majorOnly, .minor(allowedPreviousVersions: 4), .patch(allowedPreviousVersions: 4)])
+    func `Forces update when a full major behind regardless of policy`(policy: VersionUpdatePolicy) {
+        let device = VersionNumber(majorNum: 1, minorNum: 5, patchNum: 5)
+        let online = VersionNumber(majorNum: 2, minorNum: 0, patchNum: 0)
+
+        #expect(VersionNumberHandler.versionUpdateIsRequired(deviceVersion: device, onlineVersion: online, policy: policy))
+    }
+
+    @Test(arguments: [VersionUpdatePolicy.majorOnly, .minor(allowedPreviousVersions: 4), .patch(allowedPreviousVersions: 4)])
+    func `Never forces update when the device is ahead of online`(policy: VersionUpdatePolicy) {
+        let device = VersionNumber(majorNum: 4, minorNum: 36, patchNum: 0)
+        let online = VersionNumber(majorNum: 4, minorNum: 35, patchNum: 0)
+
+        #expect(!VersionNumberHandler.versionUpdateIsRequired(deviceVersion: device, onlineVersion: online, policy: policy))
+    }
+
+    @Test(arguments: [VersionUpdatePolicy.majorOnly, .minor(allowedPreviousVersions: 4), .patch(allowedPreviousVersions: 4)])
+    func `Does not force update when versions are equal regardless of policy`(policy: VersionUpdatePolicy) {
         let version = VersionNumber(majorNum: 1, minorNum: 1, patchNum: 1)
 
-        #expect(!VersionNumberHandler.versionUpdateIsRequired(deviceVersion: version, onlineVersion: version, selectedVersionNumberType: selectedVersionNumberType))
+        #expect(!VersionNumberHandler.versionUpdateIsRequired(deviceVersion: version, onlineVersion: version, policy: policy))
+    }
+}
+
+
+// MARK: - Version Status
+extension VersionNumberHandlerTests {
+    @Test
+    func `Reports up to date when the device matches the online version`() {
+        let version = VersionNumber(majorNum: 1, minorNum: 2, patchNum: 3)
+
+        #expect(VersionNumberHandler.versionStatus(deviceVersion: version, onlineVersion: version, policy: .majorOnly) == .upToDate)
+    }
+
+    @Test
+    func `Reports up to date when the device is ahead of online`() {
+        let device = VersionNumber(majorNum: 2, minorNum: 0, patchNum: 0)
+        let online = VersionNumber(majorNum: 1, minorNum: 9, patchNum: 9)
+
+        #expect(VersionNumberHandler.versionStatus(deviceVersion: device, onlineVersion: online, policy: .patch(allowedPreviousVersions: 0)) == .upToDate)
+    }
+
+    @Test
+    func `Reports update available when behind but within policy`() {
+        let device = VersionNumber(majorNum: 1, minorNum: 2, patchNum: 0)
+        let online = VersionNumber(majorNum: 1, minorNum: 5, patchNum: 0)
+
+        #expect(VersionNumberHandler.versionStatus(deviceVersion: device, onlineVersion: online, policy: .majorOnly) == .updateAvailable)
+    }
+
+    @Test
+    func `Reports update required when the policy forces an update`() {
+        let device = VersionNumber(majorNum: 1, minorNum: 0, patchNum: 0)
+        let online = VersionNumber(majorNum: 2, minorNum: 0, patchNum: 0)
+
+        #expect(VersionNumberHandler.versionStatus(deviceVersion: device, onlineVersion: online, policy: .majorOnly) == .updateRequired)
+    }
+
+    @Test(arguments: [
+        (VersionNumber(majorNum: 4, minorNum: 32, patchNum: 0), VersionUpdateStatus.updateAvailable),
+        (VersionNumber(majorNum: 4, minorNum: 30, patchNum: 0), VersionUpdateStatus.updateRequired)
+    ])
+    func `Classifies the device against the minor window`(device: VersionNumber, expected: VersionUpdateStatus) {
+        let online = VersionNumber(majorNum: 4, minorNum: 35, patchNum: 0)
+
+        #expect(VersionNumberHandler.versionStatus(deviceVersion: device, onlineVersion: online, policy: .minor(allowedPreviousVersions: 4)) == expected)
     }
 }

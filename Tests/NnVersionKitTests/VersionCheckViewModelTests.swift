@@ -14,7 +14,7 @@ struct VersionCheckViewModelTests {
     func `Triggers update when online version is higher`() async throws {
         let device: LoaderResult = .success(.init(majorNum: 1, minorNum: 0, patchNum: 0))
         let online: LoaderResult = .success(.init(majorNum: 2, minorNum: 0, patchNum: 0))
-        let sut = makeSUT(deviceResult: device, onlineResult: online, type: .major)
+        let sut = makeSUT(deviceResult: device, onlineResult: online, policy: .majorOnly)
 
         await sut.checkVersions()
 
@@ -25,7 +25,7 @@ struct VersionCheckViewModelTests {
     func `Does not trigger update when versions are equal`() async throws {
         let version = VersionNumber(majorNum: 1, minorNum: 2, patchNum: 3)
         let result: LoaderResult = .success(version)
-        let sut = makeSUT(deviceResult: result, onlineResult: result, type: .patch)
+        let sut = makeSUT(deviceResult: result, onlineResult: result, policy: .patch(allowedPreviousVersions: 0))
 
         await sut.checkVersions()
 
@@ -36,7 +36,7 @@ struct VersionCheckViewModelTests {
     func `Does not trigger update when lower level changes aren't required`() async throws {
         let device: LoaderResult = .success(.init(majorNum: 1, minorNum: 0, patchNum: 0))
         let online: LoaderResult = .success(.init(majorNum: 1, minorNum: 0, patchNum: 5))
-        let sut = makeSUT(deviceResult: device, onlineResult: online, type: .major)
+        let sut = makeSUT(deviceResult: device, onlineResult: online, policy: .majorOnly)
 
         await sut.checkVersions()
 
@@ -49,9 +49,9 @@ struct VersionCheckViewModelTests {
         let error = TestError.versionLoader
         let device: LoaderResult = .failure(error)
         let online: LoaderResult = .success(.init(majorNum: 1, minorNum: 0, patchNum: 0))
-        let sut = makeSUT(deviceResult: device, onlineResult: online, type: .major) {
+        let sut = makeSUT(deviceResult: device, onlineResult: online, policy: .majorOnly, onError: {
             receivedError = $0
-        }
+        })
 
         await sut.checkVersions()
 
@@ -63,7 +63,7 @@ struct VersionCheckViewModelTests {
     func `Does not trigger update when version loading fails`() async {
         let device: LoaderResult = .failure(TestError.versionLoader)
         let online: LoaderResult = .success(.init(majorNum: 1, minorNum: 0, patchNum: 0))
-        let sut = makeSUT(deviceResult: device, onlineResult: online, type: .major)
+        let sut = makeSUT(deviceResult: device, onlineResult: online, policy: .majorOnly)
 
         await sut.checkVersions()
 
@@ -71,6 +71,36 @@ struct VersionCheckViewModelTests {
     }
 }
 
+
+
+// MARK: - Status
+extension VersionCheckViewModelTests {
+    @Test
+    func `Reports update available status when behind within policy`() async {
+        let device: LoaderResult = .success(.init(majorNum: 1, minorNum: 0, patchNum: 0))
+        let online: LoaderResult = .success(.init(majorNum: 1, minorNum: 5, patchNum: 0))
+        let sut = makeSUT(deviceResult: device, onlineResult: online, policy: .majorOnly)
+
+        await sut.checkVersions()
+
+        #expect(sut.status == .updateAvailable)
+    }
+
+    @Test
+    func `Passes the online version to the status handler`() async throws {
+        var receivedVersion: VersionNumber?
+        let onlineVersion = VersionNumber(majorNum: 2, minorNum: 0, patchNum: 0)
+        let device: LoaderResult = .success(.init(majorNum: 1, minorNum: 0, patchNum: 0))
+        let sut = makeSUT(deviceResult: device, onlineResult: .success(onlineVersion), policy: .majorOnly, onStatus: { _, version in
+            receivedVersion = version
+        })
+
+        await sut.checkVersions()
+
+        let received = try #require(receivedVersion)
+        #expect(received == onlineVersion)
+    }
+}
 
 
 // MARK: - Helpers
@@ -101,11 +131,12 @@ private extension VersionCheckViewModelTests {
 
 // MARK: - SUT
 private extension VersionCheckViewModelTests {
-    func makeSUT(deviceResult: LoaderResult, onlineResult: LoaderResult, type: VersionNumberType, onError: ((Error) -> Void)? = nil) -> VersionCheckViewModel {
+    func makeSUT(deviceResult: LoaderResult, onlineResult: LoaderResult, policy: VersionUpdatePolicy, onStatus: VersionStatusHandler? = nil, onError: ((Error) -> Void)? = nil) -> VersionCheckViewModel {
         return .init(
             deviceVersionLoader: MockVersionLoader(result: deviceResult),
             onlineVersionLoader: MockVersionLoader(result: onlineResult),
-            selectedVersionNumberType: type,
+            policy: policy,
+            onStatus: onStatus,
             onError: onError
         )
     }
