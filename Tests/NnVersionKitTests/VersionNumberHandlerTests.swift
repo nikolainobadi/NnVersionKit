@@ -169,3 +169,48 @@ extension VersionNumberHandlerTests {
         #expect(!VersionNumberHandler.versionUpdateIsRequired(deviceVersion: version, onlineVersion: version, policy: policy))
     }
 }
+
+
+// MARK: - Version Status
+extension VersionNumberHandlerTests {
+    @Test
+    func `Reports up to date when the device matches the online version`() {
+        let version = VersionNumber(majorNum: 1, minorNum: 2, patchNum: 3)
+
+        #expect(VersionNumberHandler.versionStatus(deviceVersion: version, onlineVersion: version, policy: .majorOnly) == .upToDate)
+    }
+
+    @Test
+    func `Reports up to date when the device is ahead of online`() {
+        let device = VersionNumber(majorNum: 2, minorNum: 0, patchNum: 0)
+        let online = VersionNumber(majorNum: 1, minorNum: 9, patchNum: 9)
+
+        #expect(VersionNumberHandler.versionStatus(deviceVersion: device, onlineVersion: online, policy: .patch(allowedPreviousVersions: 0)) == .upToDate)
+    }
+
+    @Test
+    func `Reports update available when behind but within policy`() {
+        let device = VersionNumber(majorNum: 1, minorNum: 2, patchNum: 0)
+        let online = VersionNumber(majorNum: 1, minorNum: 5, patchNum: 0)
+
+        #expect(VersionNumberHandler.versionStatus(deviceVersion: device, onlineVersion: online, policy: .majorOnly) == .updateAvailable)
+    }
+
+    @Test
+    func `Reports update required when the policy forces an update`() {
+        let device = VersionNumber(majorNum: 1, minorNum: 0, patchNum: 0)
+        let online = VersionNumber(majorNum: 2, minorNum: 0, patchNum: 0)
+
+        #expect(VersionNumberHandler.versionStatus(deviceVersion: device, onlineVersion: online, policy: .majorOnly) == .updateRequired)
+    }
+
+    @Test(arguments: [
+        (VersionNumber(majorNum: 4, minorNum: 32, patchNum: 0), VersionUpdateStatus.updateAvailable),
+        (VersionNumber(majorNum: 4, minorNum: 30, patchNum: 0), VersionUpdateStatus.updateRequired)
+    ])
+    func `Classifies the device against the minor window`(device: VersionNumber, expected: VersionUpdateStatus) {
+        let online = VersionNumber(majorNum: 4, minorNum: 35, patchNum: 0)
+
+        #expect(VersionNumberHandler.versionStatus(deviceVersion: device, onlineVersion: online, policy: .minor(allowedPreviousVersions: 4)) == expected)
+    }
+}

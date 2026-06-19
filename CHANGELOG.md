@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - `VersionUpdatePolicy`, a public enum controlling how far behind the latest version a device may fall before an update is forced. `.majorOnly` forces an update only on a new major version; `.minor(allowedPreviousVersions:)` and `.patch(allowedPreviousVersions:)` additionally force an update once the device falls more than the allowed number of minor or patch releases behind the latest.
+- `VersionUpdateStatus` and a general `onStatus` callback on both `checkingAppVersion` view modifiers, surfacing whether the device is `upToDate`, behind but within policy (`updateAvailable`), or `updateRequired`. Use it to show a non-blocking "update available" prompt when a forced update is not warranted. `VersionNumberHandler.versionStatus(...)` exposes the same classification for non-SwiftUI callers, and `VersionNumber` now conforms to `Comparable`.
+- `StaticVersionLoader`, a `VersionLoader` returning a fixed version, plus `NnVersionKitEnvironment` for seeding the device and/or online version through the launch environment in UI tests. The bundle `checkingAppVersion` overload gains an opt-in `enableUITestSeeding` flag that applies the seeded versions. Seeding only ever sets its own namespaced keys, so it composes with other launch-environment seeders.
 
 ### Changed
 - **Breaking:** The `checkingAppVersion` view modifiers now take an `updatePolicy: VersionUpdatePolicy` parameter (default `.majorOnly`) in place of the previous `versionNumberUpdateType: VersionNumberType` parameter.

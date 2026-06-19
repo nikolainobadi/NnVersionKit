@@ -12,11 +12,15 @@ import Observation
 @MainActor
 @Observable
 final class VersionCheckViewModel {
+    /// The latest classification of the device version against the online version.
+    var status: VersionUpdateStatus = .upToDate
+
     /// Indicates whether a version update is required.
-    var versionUpdateRequired = false
+    var versionUpdateRequired: Bool { status == .updateRequired }
 
     private let debugEnabled: Bool
     private let onError: ((Error) -> Void)?
+    private let onStatus: ((VersionUpdateStatus, VersionNumber) -> Void)?
     private let deviceVersionLoader: any VersionLoader
     private let onlineVersionLoader: any VersionLoader
     private let policy: VersionUpdatePolicy
@@ -28,15 +32,18 @@ final class VersionCheckViewModel {
     ///   - onlineVersionLoader: Loader for retrieving the remote version.
     ///   - policy: Determines how far behind the latest version the device may fall before an update is forced.
     ///   - debugEnabled: When `true`, prints version check details to the console. Nothing is printed when `false`.
+    ///   - onStatus: Optional handler invoked after each successful check with the resolved status and the online version.
     ///   - onError: Optional error handler for reporting load or comparison failures.
     init(
         deviceVersionLoader: any VersionLoader,
         onlineVersionLoader: any VersionLoader,
         policy: VersionUpdatePolicy,
         debugEnabled: Bool = false,
+        onStatus: ((VersionUpdateStatus, VersionNumber) -> Void)? = nil,
         onError: ((Error) -> Void)?
     ) {
         self.onError = onError
+        self.onStatus = onStatus
         self.debugEnabled = debugEnabled
         self.deviceVersionLoader = deviceVersionLoader
         self.onlineVersionLoader = onlineVersionLoader
@@ -58,13 +65,14 @@ extension VersionCheckViewModel {
             let onlineVersion = try await onlineVersionLoader.loadVersionNumber()
             log("Loaded online version: \(onlineVersion.stringFormat)")
 
-            versionUpdateRequired = VersionNumberHandler.versionUpdateIsRequired(
+            status = VersionNumberHandler.versionStatus(
                 deviceVersion: deviceVersion,
                 onlineVersion: onlineVersion,
                 policy: policy,
                 debugEnabled: debugEnabled
             )
-            log("Version update required: \(versionUpdateRequired)")
+            log("Version status: \(status)")
+            onStatus?(status, onlineVersion)
         } catch {
             log("Version check failed: \(error.localizedDescription)")
             onError?(error)

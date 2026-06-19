@@ -18,8 +18,10 @@ This package is ideal for developers who want fine-grained control over version 
 - [Installation](#installation)
 - [Usage](#usage)
   - [Basic SwiftUI Integration](#basic-swiftui-integration)
+  - [Responding to an Available Update](#responding-to-an-available-update)
   - [Custom Version Loaders](#custom-version-loaders)
   - [Comparing Version Numbers Manually](#comparing-version-numbers-manually)
+  - [UI Testing](#ui-testing)
   - [Debug Logging](#debug-logging)
 - [Contributing](#contributing)
 - [License](#license)
@@ -29,8 +31,10 @@ This package is ideal for developers who want fine-grained control over version 
 - Retrieve current app version from the local `Info.plist`
 - Fetch latest version info from the App Store
 - Force updates by policy — major-only, or tolerate a window of recent minor/patch releases
+- A status callback to detect when an update is available but not yet forced
 - Async/await-powered version loading
 - SwiftUI view modifiers to trigger update UIs
+- Seed device and online versions for deterministic UI testing
 - Opt-in debug logging for troubleshooting version checks
 - Fully tested with lightweight, modern syntax
 
@@ -70,6 +74,28 @@ var body: some View {
 
 `allowedPreviousVersions: 0` requires the device to be on the latest version at that level. `.patch` additionally forces an update on any new minor version, since patch numbers reset per minor.
 
+### Responding to an Available Update
+A forced update replaces your content with the update view. But when the device is behind yet still **within** the accepted range, you often want a softer, non-blocking nudge instead. Pass an `onStatus` handler to receive the result of every check along with the online version.
+
+```swift
+@State private var availableVersion: VersionNumber?
+
+var body: some View {
+    ContentView()
+        .checkingAppVersion(bundle: .main, updatePolicy: .minor(allowedPreviousVersions: 4)) {
+            Text("Please update the app!")
+        }
+        // onStatus fires for every check; updateView still handles the forced case.
+        .checkingAppVersion(bundle: .main, onStatus: { status, onlineVersion in
+            availableVersion = status == .updateAvailable ? onlineVersion : nil
+        }) {
+            Text("Please update the app!")
+        }
+}
+```
+
+`VersionUpdateStatus` has three cases: `.upToDate`, `.updateAvailable` (behind but allowed), and `.updateRequired` (forced). For non-SwiftUI code, `VersionNumberHandler.versionStatus(deviceVersion:onlineVersion:policy:)` returns the same value.
+
 ### Custom Version Loaders
 If you store your local device version outside of the main `Bundle`, and/or your app isn't on the App Store (or you store the 'online version number' elsewhere), you can simply implement your own `VersionLoader`s to pass into the view modifier.
 
@@ -106,6 +132,27 @@ let updateRequired = VersionNumberHandler.versionUpdateIsRequired(deviceVersion:
 
 print("version update required:", updateRequired)
 ```
+
+### UI Testing
+To drive the update UI deterministically in UI tests, seed the device and/or online version through the launch environment. Opt in with `enableUITestSeeding` on the bundle modifier:
+
+```swift
+ContentView()
+    .checkingAppVersion(bundle: .main, updatePolicy: .majorOnly, enableUITestSeeding: true) {
+        Text("Please update the app!")
+    }
+```
+
+In the UI test, set the seeded versions before launching. The helper only sets its own keys, so it is safe to **merge** alongside any other launch-environment seeding you do:
+
+```swift
+app.launchEnvironment.merge(
+    NnVersionKitEnvironment.seedValues(device: "1.0.0", online: "2.0.0")
+) { _, new in new }
+app.launch()
+```
+
+With `device 1.0.0 / online 2.0.0` the forced update view appears; `1.0.0 / 1.5.0` under a tolerant policy exercises the `.updateAvailable` path instead. Either version may be omitted to leave the real loader (bundle or App Store) in place. For non-test sources where the version is already known, `StaticVersionLoader(version:)` can be passed to the two-loader overload directly.
 
 ### Debug Logging
 Version checks are completely silent by default — nothing is printed to the console. Pass `debugEnabled: true` to print detailed version check information, useful for troubleshooting why an update prompt is (or isn't) appearing.

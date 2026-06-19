@@ -73,6 +73,33 @@ public enum VersionNumberHandler {
 
         return updateRequired
     }
+
+    /// Classifies the device version against the latest online version under an update policy.
+    ///
+    /// Distinguishes three outcomes: the device is current (`upToDate`), behind but tolerated by the
+    /// policy (`updateAvailable`), or behind enough that the policy forces an update (`updateRequired`).
+    ///
+    /// - Parameters:
+    ///   - deviceVersion: The version currently on the device.
+    ///   - onlineVersion: The version available online (e.g., App Store).
+    ///   - policy: How far behind the latest version the device may fall before an update is forced.
+    ///   - debugEnabled: When `true`, prints comparison details to the console. Nothing is printed when `false` (default).
+    /// - Returns: The `VersionUpdateStatus` describing where the device sits relative to the latest version.
+    public static func versionStatus(deviceVersion: VersionNumber, onlineVersion: VersionNumber, policy: VersionUpdatePolicy, debugEnabled: Bool = false) -> VersionUpdateStatus {
+        let status: VersionUpdateStatus
+
+        if deviceVersion >= onlineVersion {
+            status = .upToDate
+        } else if versionUpdateIsRequired(deviceVersion: deviceVersion, onlineVersion: onlineVersion, policy: policy, debugEnabled: debugEnabled) {
+            status = .updateRequired
+        } else {
+            status = .updateAvailable
+        }
+
+        VersionKitLogger.log("Version status for device \(deviceVersion.stringFormat) vs online \(onlineVersion.stringFormat) under policy \(policy): \(status)", isEnabled: debugEnabled)
+
+        return status
+    }
 }
 
 
