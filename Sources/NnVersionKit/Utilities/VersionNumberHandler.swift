@@ -32,29 +32,46 @@ public enum VersionNumberHandler {
         return number
     }
 
-    /// Compares two version numbers using a selected comparison type.
+    /// Compares two version numbers against an update policy, tolerating a window of recent versions.
+    ///
+    /// A new major version always forces an update. Beyond that, `.minor`/`.patch` policies allow the
+    /// device to stay up to `allowedPreviousVersions` releases behind the latest at that level.
     ///
     /// - Parameters:
     ///   - deviceVersion: The version currently on the device.
     ///   - onlineVersion: The version available online (e.g., App Store).
-    ///   - selectedVersionNumberType: The level of version comparison (major, minor, or patch).
+    ///   - policy: How far behind the latest version the device may fall before an update is forced.
     ///   - debugEnabled: When `true`, prints comparison details to the console. Nothing is printed when `false` (default).
-    /// - Returns: `true` if an update is required based on the selected comparison type.
-    public static func versionUpdateIsRequired(deviceVersion: VersionNumber, onlineVersion: VersionNumber, selectedVersionNumberType: VersionNumberType, debugEnabled: Bool = false) -> Bool {
-        let majorUpdate = deviceVersion.majorNum < onlineVersion.majorNum
-        let minorUpdate = deviceVersion.minorNum < onlineVersion.minorNum
-        let patchUpdate = deviceVersion.patchNum < onlineVersion.patchNum
+    /// - Returns: `true` if an update is required under the given policy.
+    public static func versionUpdateIsRequired(deviceVersion: VersionNumber, onlineVersion: VersionNumber, policy: VersionUpdatePolicy, debugEnabled: Bool = false) -> Bool {
+        let updateRequired: Bool
 
-        VersionKitLogger.log("Comparing device \(deviceVersion.stringFormat) to online \(onlineVersion.stringFormat) at \(selectedVersionNumberType) level (major: \(majorUpdate), minor: \(minorUpdate), patch: \(patchUpdate))", isEnabled: debugEnabled)
+        switch policy {
+        case .majorOnly:
+            updateRequired = deviceVersion.majorNum < onlineVersion.majorNum
 
-        switch selectedVersionNumberType {
-        case .major:
-            return majorUpdate
-        case .minor:
-            return majorUpdate || minorUpdate
-        case .patch:
-            return majorUpdate || minorUpdate || patchUpdate
+        case .minor(let allowedPreviousVersions):
+            if deviceVersion.majorNum != onlineVersion.majorNum {
+                updateRequired = deviceVersion.majorNum < onlineVersion.majorNum
+            } else {
+                let floor = onlineVersion.minorNum - max(0, allowedPreviousVersions)
+                updateRequired = deviceVersion.minorNum < floor
+            }
+
+        case .patch(let allowedPreviousVersions):
+            if deviceVersion.majorNum != onlineVersion.majorNum {
+                updateRequired = deviceVersion.majorNum < onlineVersion.majorNum
+            } else if deviceVersion.minorNum != onlineVersion.minorNum {
+                updateRequired = deviceVersion.minorNum < onlineVersion.minorNum
+            } else {
+                let floor = onlineVersion.patchNum - max(0, allowedPreviousVersions)
+                updateRequired = deviceVersion.patchNum < floor
+            }
         }
+
+        VersionKitLogger.log("Comparing device \(deviceVersion.stringFormat) to online \(onlineVersion.stringFormat) under policy \(policy) (update required: \(updateRequired))", isEnabled: debugEnabled)
+
+        return updateRequired
     }
 }
 

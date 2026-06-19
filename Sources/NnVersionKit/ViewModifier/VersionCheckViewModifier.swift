@@ -30,12 +30,12 @@ public extension View {
     /// - Parameters:
     ///   - bundle: The bundle to extract the local version from.
     ///   - onlineVersionLoader: Optional custom loader for fetching the online version (defaults to App Store).
-    ///   - versionNumberUpdateType: The level of version comparison to trigger an update (default is `.major`).
+    ///   - updatePolicy: How far behind the latest version the device may fall before an update is forced (default is `.majorOnly`).
     ///   - debugEnabled: When `true`, prints version check details to the console. Nothing is printed when `false` (default).
     ///   - onError: Optional error handler for version check failures.
     ///   - updateView: A view to present when an update is required.
-    func checkingAppVersion<UpdateView: View>(bundle: Bundle, onlineVersionLoader: VersionLoader? = nil, versionNumberUpdateType: VersionNumberType = .major, debugEnabled: Bool = false, onError: ((Error) -> Void)? = nil, @ViewBuilder updateView: @escaping () -> UpdateView) -> some View {
-        modifier(VersionCheckViewModifier(viewModel: .customInit(bundle: bundle, onlineVersionLoader: onlineVersionLoader, versionType: versionNumberUpdateType, debugEnabled: debugEnabled, onError: onError), updateView: updateView))
+    func checkingAppVersion<UpdateView: View>(bundle: Bundle, onlineVersionLoader: VersionLoader? = nil, updatePolicy: VersionUpdatePolicy = .majorOnly, debugEnabled: Bool = false, onError: ((Error) -> Void)? = nil, @ViewBuilder updateView: @escaping () -> UpdateView) -> some View {
+        modifier(VersionCheckViewModifier(viewModel: .customInit(bundle: bundle, onlineVersionLoader: onlineVersionLoader, policy: updatePolicy, debugEnabled: debugEnabled, onError: onError), updateView: updateView))
     }
 
     /// Adds a modifier to check the current app version using custom version loaders.
@@ -43,22 +43,22 @@ public extension View {
     /// - Parameters:
     ///   - deviceVersionLoader: Loader for the local version (e.g., from bundle).
     ///   - onlineVersionLoader: Loader for the online version (e.g., from App Store).
-    ///   - versionNumberUpdateType: The level of version comparison to trigger an update (default is `.major`).
+    ///   - updatePolicy: How far behind the latest version the device may fall before an update is forced (default is `.majorOnly`).
     ///   - debugEnabled: When `true`, prints version check details to the console. Nothing is printed when `false` (default).
     ///   - onError: Optional error handler for version check failures.
     ///   - updateView: A view to present when an update is required.
-    func checkingAppVersion<UpdateView: View>(deviceVersionLoader: VersionLoader, onlineVersionLoader: VersionLoader, versionNumberUpdateType: VersionNumberType = .major, debugEnabled: Bool = false, onError: ((Error) -> Void)? = nil, @ViewBuilder updateView: @escaping () -> UpdateView) -> some View {
-        modifier(VersionCheckViewModifier(viewModel: .init(deviceVersionLoader: deviceVersionLoader, onlineVersionLoader: onlineVersionLoader, selectedVersionNumberType: versionNumberUpdateType, debugEnabled: debugEnabled, onError: onError), updateView: updateView))
+    func checkingAppVersion<UpdateView: View>(deviceVersionLoader: VersionLoader, onlineVersionLoader: VersionLoader, updatePolicy: VersionUpdatePolicy = .majorOnly, debugEnabled: Bool = false, onError: ((Error) -> Void)? = nil, @ViewBuilder updateView: @escaping () -> UpdateView) -> some View {
+        modifier(VersionCheckViewModifier(viewModel: .init(deviceVersionLoader: deviceVersionLoader, onlineVersionLoader: onlineVersionLoader, policy: updatePolicy, debugEnabled: debugEnabled, onError: onError), updateView: updateView))
     }
 }
 
 
 // MARK: - Extension Dependencies
 fileprivate extension VersionCheckViewModel {
-    static func customInit(bundle: Bundle, onlineVersionLoader: VersionLoader?, versionType: VersionNumberType, debugEnabled: Bool, onError: ((Error) -> Void)?) -> VersionCheckViewModel {
+    static func customInit(bundle: Bundle, onlineVersionLoader: VersionLoader?, policy: VersionUpdatePolicy, debugEnabled: Bool, onError: ((Error) -> Void)?) -> VersionCheckViewModel {
         let deviceLoader = DeviceBundleVersionLoader(bundle: bundle, debugEnabled: debugEnabled)
         let onlineLoader = onlineVersionLoader ?? AppStoreVersionLoader(bundleId: bundle.bundleIdentifier, debugEnabled: debugEnabled)
 
-        return .init(deviceVersionLoader: deviceLoader, onlineVersionLoader: onlineLoader, selectedVersionNumberType: versionType, debugEnabled: debugEnabled, onError: onError)
+        return .init(deviceVersionLoader: deviceLoader, onlineVersionLoader: onlineLoader, policy: policy, debugEnabled: debugEnabled, onError: onError)
     }
 }

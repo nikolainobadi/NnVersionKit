@@ -28,7 +28,7 @@ This package is ideal for developers who want fine-grained control over version 
 
 - Retrieve current app version from the local `Info.plist`
 - Fetch latest version info from the App Store
-- Compare versions at major, minor, or patch level
+- Force updates by policy — major-only, or tolerate a window of recent minor/patch releases
 - Async/await-powered version loading
 - SwiftUI view modifiers to trigger update UIs
 - Opt-in debug logging for troubleshooting version checks
@@ -45,17 +45,30 @@ This package is ideal for developers who want fine-grained control over version 
 ### Basic SwiftUI Integration
 Just pass in the main `Bundle` of your app to compare the device version with the current version from the App Store.
 
-By default, the version number being compared will be the **major** number, but you can pass in a different `VersionNumberType` if you want updates to trigger for **minor** or **patch** changes.
+By default, only a new **major** version forces an update (`.majorOnly`). Pass a different `VersionUpdatePolicy` to also force updates once the device falls too far behind at the **minor** or **patch** level.
 ```swift
 import NnVersionKit
 
 var body: some View {
     ContentView()
-        .checkingAppVersion(bundle: .main, versionNumberUpdateType: .major) { 
+        .checkingAppVersion(bundle: .main, updatePolicy: .majorOnly) {
             Text("Please update the app!")
         }
 }
 ```
+
+#### Tolerating a range of recent versions
+`.minor` and `.patch` let clients stay a few releases behind the latest before an update is forced. A new major version always forces an update under every policy.
+
+```swift
+// Latest is 4.35.0. Force an update only once the device is more than 4 minor
+// releases behind — i.e. anything older than 4.31.x. Patch differences are ignored.
+.checkingAppVersion(bundle: .main, updatePolicy: .minor(allowedPreviousVersions: 4)) {
+    Text("Please update the app!")
+}
+```
+
+`allowedPreviousVersions: 0` requires the device to be on the latest version at that level. `.patch` additionally forces an update on any new minor version, since patch numbers reset per minor.
 
 ### Custom Version Loaders
 If you store your local device version outside of the main `Bundle`, and/or your app isn't on the App Store (or you store the 'online version number' elsewhere), you can simply implement your own `VersionLoader`s to pass into the view modifier.
@@ -89,7 +102,7 @@ let onlineVersionLoader = AppStoreVersionLoader(bundleId: Bundle.main.bundleIden
 
 let deviceVersion = try await deviceVersionLoader.loadVersionNumber()
 let onlineVersion = try await onlineVersionLoader.loadVersionNumber()
-let updateRequired = VersionNumberHandler.versionUpdateIsRequired(deviceVersion: deviceVersion, onlineVersion: onlineVersion, selectedVersionNumberType: .major)
+let updateRequired = VersionNumberHandler.versionUpdateIsRequired(deviceVersion: deviceVersion, onlineVersion: onlineVersion, policy: .majorOnly)
 
 print("version update required:", updateRequired)
 ```
@@ -109,7 +122,7 @@ var body: some View {
 Console output when enabled:
 
 ```
-[NnVersionKit] Starting version check (comparison level: major)
+[NnVersionKit] Starting version check (policy: majorOnly)
 [NnVersionKit] Device version string from bundle: 1.2.3
 [NnVersionKit] Parsed version string '1.2.3' into 1.2.3
 [NnVersionKit] Loaded device version: 1.2.3
@@ -118,7 +131,7 @@ Console output when enabled:
 [NnVersionKit] App Store version string: 2.0.0
 [NnVersionKit] Parsed version string '2.0.0' into 2.0.0
 [NnVersionKit] Loaded online version: 2.0.0
-[NnVersionKit] Comparing device 1.2.3 to online 2.0.0 at major level (major: true, minor: false, patch: false)
+[NnVersionKit] Comparing device 1.2.3 to online 2.0.0 under policy majorOnly (update required: true)
 [NnVersionKit] Version update required: true
 ```
 

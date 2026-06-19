@@ -5,14 +5,16 @@
 //  Created by Nikolai Nobadi on 4/3/25.
 //
 
-/// Specifies the type of version component to compare when checking for updates.
-public enum VersionNumberType: Int, CaseIterable, Sendable {
-    /// Compare only the major version.
+/// Identifies a semantic version component by its position when parsing a version string.
+///
+/// The raw value doubles as the component's index in a parsed `[major, minor, patch]` array.
+enum VersionNumberType: Int {
+    /// The major version component (index 0).
     case major
 
-    /// Compare major and minor versions.
+    /// The minor version component (index 1).
     case minor
 
-    /// Compare major, minor, and patch versions.
+    /// The patch version component (index 2).
     case patch
 }

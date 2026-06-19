@@ -19,20 +19,20 @@ final class VersionCheckViewModel {
     private let onError: ((Error) -> Void)?
     private let deviceVersionLoader: any VersionLoader
     private let onlineVersionLoader: any VersionLoader
-    private let selectedVersionNumberType: VersionNumberType
+    private let policy: VersionUpdatePolicy
 
     /// Initializes the view model with custom version loaders and error handling.
     ///
     /// - Parameters:
     ///   - deviceVersionLoader: Loader for retrieving the local version.
     ///   - onlineVersionLoader: Loader for retrieving the remote version.
-    ///   - selectedVersionNumberType: Determines the level of version comparison (e.g., major, minor, patch).
+    ///   - policy: Determines how far behind the latest version the device may fall before an update is forced.
     ///   - debugEnabled: When `true`, prints version check details to the console. Nothing is printed when `false`.
     ///   - onError: Optional error handler for reporting load or comparison failures.
     init(
         deviceVersionLoader: any VersionLoader,
         onlineVersionLoader: any VersionLoader,
-        selectedVersionNumberType: VersionNumberType,
+        policy: VersionUpdatePolicy,
         debugEnabled: Bool = false,
         onError: ((Error) -> Void)?
     ) {
@@ -40,7 +40,7 @@ final class VersionCheckViewModel {
         self.debugEnabled = debugEnabled
         self.deviceVersionLoader = deviceVersionLoader
         self.onlineVersionLoader = onlineVersionLoader
-        self.selectedVersionNumberType = selectedVersionNumberType
+        self.policy = policy
     }
 }
 
@@ -52,7 +52,7 @@ extension VersionCheckViewModel {
     /// - Note: Invokes the `onError` handler if an error occurs during loading or comparison.
     func checkVersions() async {
         do {
-            log("Starting version check (comparison level: \(selectedVersionNumberType))")
+            log("Starting version check (policy: \(policy))")
             let deviceVersion = try await deviceVersionLoader.loadVersionNumber()
             log("Loaded device version: \(deviceVersion.stringFormat)")
             let onlineVersion = try await onlineVersionLoader.loadVersionNumber()
@@ -61,7 +61,7 @@ extension VersionCheckViewModel {
             versionUpdateRequired = VersionNumberHandler.versionUpdateIsRequired(
                 deviceVersion: deviceVersion,
                 onlineVersion: onlineVersion,
-                selectedVersionNumberType: selectedVersionNumberType,
+                policy: policy,
                 debugEnabled: debugEnabled
             )
             log("Version update required: \(versionUpdateRequired)")
