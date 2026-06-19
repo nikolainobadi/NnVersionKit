@@ -96,6 +96,27 @@ var body: some View {
 
 `VersionUpdateStatus` has three cases: `.upToDate`, `.updateAvailable` (behind but allowed), and `.updateRequired` (forced). For non-SwiftUI code, `VersionNumberHandler.versionStatus(deviceVersion:onlineVersion:policy:)` returns the same value.
 
+#### Owning the update UI yourself
+There are two ways to handle an update, and you pick by whether you pass an `updateView`:
+
+1. **Let NnVersionKit present it** — provide `updateView`, and it replaces your content when an update is required (the examples above).
+2. **Handle everything yourself** — omit `updateView` and pass `onStatus`. Your content is never replaced; you present the forced update, the soft nudge, or anything else however you like.
+
+```swift
+@State private var forcedUpdateVersion: VersionNumber?
+
+var body: some View {
+    ContentView()
+        // No updateView — NnVersionKit never swaps your content.
+        .checkingAppVersion(bundle: .main, updatePolicy: .minor(allowedPreviousVersions: 4), onStatus: { status, onlineVersion in
+            forcedUpdateVersion = status == .updateRequired ? onlineVersion : nil
+        })
+        .fullScreenCover(item: $forcedUpdateVersion) { version in
+            MyForcedUpdateScreen(version: version)
+        }
+}
+```
+
 ### Custom Version Loaders
 If you store your local device version outside of the main `Bundle`, and/or your app isn't on the App Store (or you store the 'online version number' elsewhere), you can simply implement your own `VersionLoader`s to pass into the view modifier.
 

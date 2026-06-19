@@ -17,3 +17,8 @@ public enum VersionUpdateStatus: Sendable, Equatable {
     /// The policy requires an update — the device is too far behind (or a full major behind).
     case updateRequired
 }
+
+/// Handler invoked after a version check with the resolved status and the online version.
+///
+/// Used by the `onStatus` parameter on the `checkingAppVersion` view modifiers.
+public typealias VersionStatusHandler = (VersionUpdateStatus, VersionNumber) -> Void

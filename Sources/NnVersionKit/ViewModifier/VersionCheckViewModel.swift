@@ -20,7 +20,7 @@ final class VersionCheckViewModel {
 
     private let debugEnabled: Bool
     private let onError: ((Error) -> Void)?
-    private let onStatus: ((VersionUpdateStatus, VersionNumber) -> Void)?
+    private let onStatus: VersionStatusHandler?
     private let deviceVersionLoader: any VersionLoader
     private let onlineVersionLoader: any VersionLoader
     private let policy: VersionUpdatePolicy
@@ -39,7 +39,7 @@ final class VersionCheckViewModel {
         onlineVersionLoader: any VersionLoader,
         policy: VersionUpdatePolicy,
         debugEnabled: Bool = false,
-        onStatus: ((VersionUpdateStatus, VersionNumber) -> Void)? = nil,
+        onStatus: VersionStatusHandler? = nil,
         onError: ((Error) -> Void)?
     ) {
         self.onError = onError

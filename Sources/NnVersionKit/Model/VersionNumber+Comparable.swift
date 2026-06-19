@@ -11,3 +11,11 @@ extension VersionNumber: Comparable {
         (lhs.majorNum, lhs.minorNum, lhs.patchNum) < (rhs.majorNum, rhs.minorNum, rhs.patchNum)
     }
 }
+
+extension VersionNumber: Identifiable {
+    /// The `major.minor.patch` string, so a version can drive `.sheet(item:)` / `.fullScreenCover(item:)`
+    /// when a client presents the update UI itself.
+    public var id: String {
+        stringFormat
+    }
+}

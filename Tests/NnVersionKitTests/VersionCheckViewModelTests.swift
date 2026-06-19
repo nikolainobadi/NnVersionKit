@@ -131,7 +131,7 @@ private extension VersionCheckViewModelTests {
 
 // MARK: - SUT
 private extension VersionCheckViewModelTests {
-    func makeSUT(deviceResult: LoaderResult, onlineResult: LoaderResult, policy: VersionUpdatePolicy, onStatus: ((VersionUpdateStatus, VersionNumber) -> Void)? = nil, onError: ((Error) -> Void)? = nil) -> VersionCheckViewModel {
+    func makeSUT(deviceResult: LoaderResult, onlineResult: LoaderResult, policy: VersionUpdatePolicy, onStatus: VersionStatusHandler? = nil, onError: ((Error) -> Void)? = nil) -> VersionCheckViewModel {
         return .init(
             deviceVersionLoader: MockVersionLoader(result: deviceResult),
             onlineVersionLoader: MockVersionLoader(result: onlineResult),
