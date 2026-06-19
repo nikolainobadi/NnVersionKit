@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-06-19
+
+### Added
+- `VersionUpdatePolicy`, a public enum controlling how far behind the latest version a device may fall before an update is forced. `.majorOnly` forces an update only on a new major version; `.minor(allowedPreviousVersions:)` and `.patch(allowedPreviousVersions:)` additionally force an update once the device falls more than the allowed number of minor or patch releases behind the latest.
+
+### Changed
+- **Breaking:** The `checkingAppVersion` view modifiers now take an `updatePolicy: VersionUpdatePolicy` parameter (default `.majorOnly`) in place of the previous `versionNumberUpdateType: VersionNumberType` parameter.
+- **Breaking:** `VersionNumberHandler.versionUpdateIsRequired(...)` now takes a `policy: VersionUpdatePolicy` argument instead of `selectedVersionNumberType: VersionNumberType`.
+
+### Removed
+- **Breaking:** `VersionNumberType` is no longer part of the public API. Replace `.major`, `.minor`, and `.patch` usage with the corresponding `VersionUpdatePolicy` cases.
+
 ## [1.1.0] - 2026-06-06
 
 ### Added
@@ -30,6 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Optional `onError` handler for version check failures.
 - Unit test suite and GitHub Actions CI workflow.
 
-[Unreleased]: https://github.com/nikolainobadi/NnVersionKit/compare/1.1.0...HEAD
+[Unreleased]: https://github.com/nikolainobadi/NnVersionKit/compare/2.0.0...HEAD
+[2.0.0]: https://github.com/nikolainobadi/NnVersionKit/compare/1.1.0...2.0.0
 [1.1.0]: https://github.com/nikolainobadi/NnVersionKit/compare/v1.0.0...1.1.0
 [1.0.0]: https://github.com/nikolainobadi/NnVersionKit/releases/tag/v1.0.0
