@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.1] - 2026-08-17
+
+No changes to the package API.
+
+### Added
+- The Claude Code API reference skill now ships from this repository at `Skills/NnVersionKit/`, published through the `nn-swift-skills` marketplace and pinned to a release tag. It previously lived in a separate repository, where it could drift out of step with the API it documents. A CI check now fails any pull request that changes the public API without also updating the skill.
+
+### Fixed
+- The "Responding to an Available Update" example in the README applied `checkingAppVersion` twice. Each application runs an independent check with its own loaders, so the snippet performed two App Store lookups and stacked two update gates, and the second reverted to the default `.majorOnly` policy. It now passes `updatePolicy` and `onStatus` to a single modifier.
+
 ## [2.0.0] - 2026-06-19
 
 ### Added
@@ -45,7 +55,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Optional `onError` handler for version check failures.
 - Unit test suite and GitHub Actions CI workflow.
 
-[Unreleased]: https://github.com/nikolainobadi/NnVersionKit/compare/2.0.0...HEAD
+[Unreleased]: https://github.com/nikolainobadi/NnVersionKit/compare/2.0.1...HEAD
+[2.0.1]: https://github.com/nikolainobadi/NnVersionKit/compare/2.0.0...2.0.1
 [2.0.0]: https://github.com/nikolainobadi/NnVersionKit/compare/1.1.0...2.0.0
 [1.1.0]: https://github.com/nikolainobadi/NnVersionKit/compare/v1.0.0...1.1.0
 [1.0.0]: https://github.com/nikolainobadi/NnVersionKit/releases/tag/v1.0.0
