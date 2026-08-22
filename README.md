@@ -23,6 +23,7 @@ This package is ideal for developers who want fine-grained control over version 
   - [Comparing Version Numbers Manually](#comparing-version-numbers-manually)
   - [UI Testing](#ui-testing)
   - [Debug Logging](#debug-logging)
+- [Claude Code Skill](#claude-code-skill)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -82,17 +83,20 @@ A forced update replaces your content with the update view. But when the device 
 
 var body: some View {
     ContentView()
-        .checkingAppVersion(bundle: .main, updatePolicy: .minor(allowedPreviousVersions: 4)) {
-            Text("Please update the app!")
-        }
         // onStatus fires for every check; updateView still handles the forced case.
-        .checkingAppVersion(bundle: .main, onStatus: { status, onlineVersion in
-            availableVersion = status == .updateAvailable ? onlineVersion : nil
-        }) {
+        .checkingAppVersion(
+            bundle: .main,
+            updatePolicy: .minor(allowedPreviousVersions: 4),
+            onStatus: { status, onlineVersion in
+                availableVersion = status == .updateAvailable ? onlineVersion : nil
+            }
+        ) {
             Text("Please update the app!")
         }
 }
 ```
+
+Apply the modifier **once**. Each application runs its own independent check with its own loaders, so chaining two means two App Store lookups and two stacked update gates.
 
 `VersionUpdateStatus` has three cases: `.upToDate`, `.updateAvailable` (behind but allowed), and `.updateRequired` (forced). For non-SwiftUI code, `VersionNumberHandler.versionStatus(deviceVersion:onlineVersion:policy:)` returns the same value.
 
@@ -211,6 +215,18 @@ The same flag is available when constructing loaders directly:
 let deviceVersionLoader = DeviceBundleVersionLoader(bundle: .main, debugEnabled: true)
 let onlineVersionLoader = AppStoreVersionLoader(bundleId: Bundle.main.bundleIdentifier, debugEnabled: true)
 ```
+
+## Claude Code Skill
+
+An API reference skill for [Claude Code](https://claude.com/claude-code) ships from this repo at
+`Skills/NnVersionKit/`, so the documentation changes in the same PR as the API it describes.
+
+```
+/plugin marketplace add nikolainobadi/nn-swift-skills
+```
+
+Then install `NnVersionKit@nn-swift-skills`. The marketplace entry is pinned to a release tag, so the
+skill you get always matches a shipped version.
 
 ## Contributing
 
