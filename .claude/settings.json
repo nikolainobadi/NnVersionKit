@@ -1,6 +1,6 @@
 {
   "enabledPlugins": {
-    "NnTesting@nelix-swift-tools": true,
-    "NnVersionKit@nn-swift-skills": true
+    "NnVersionKit@nn-swift-skills": true,
+    "NnTesting@nn-swift-skills": true
   }
 }
