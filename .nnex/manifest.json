@@ -1,0 +1,39 @@
+{
+  "ai" : {
+    "tasks" : [
+      {
+        "id" : "readme",
+        "review" : false,
+        "skill" : "readme-update"
+      },
+      {
+        "id" : "agentDocs",
+        "review" : false,
+        "skill" : "agent-docs-update"
+      },
+      {
+        "id" : "referenceSkill",
+        "review" : false,
+        "skill" : "reference-skill-update"
+      }
+    ]
+  },
+  "releaseBranch" : "main",
+  "targets" : [
+    {
+      "buildSettings" : {
+        "buildCommands" : [
+          "swift build"
+        ],
+        "cleanCommands" : [
+          "swift package clean"
+        ],
+        "testCommands" : [
+          "swift test"
+        ]
+      },
+      "name" : "NnVersionKit",
+      "projectType" : "libraryPackage"
+    }
+  ]
+}
