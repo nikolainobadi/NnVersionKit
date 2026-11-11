@@ -1,0 +1,16 @@
+{
+  "targets" : [
+    {
+      "buildAndTestCommands" : [
+        "swift build",
+        "swift test"
+      ],
+      "name" : "NnVersionKit",
+      "path" : ".",
+      "skills" : [
+        "Skills/NnVersionKit"
+      ],
+      "targetType" : "library"
+    }
+  ]
+}
