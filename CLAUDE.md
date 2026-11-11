@@ -79,17 +79,11 @@ reports it.
 
 ### The rule
 
-**A PR that changes the public API must also touch `Skills/`.** `.github/workflows/skill-docs.yml`
-enforces it: it counts added/removed `public`/`open`/`package` declaration lines under
-`Sources/**/*.swift` and fails the PR if `Skills/` is untouched. Add the `skip-skill-check` label
-when the PR genuinely changes no documented behavior — a rename, a reformat, a file move.
-
-**The check has a real blind spot.** It only sees *declaration* lines. A behavior change inside a
-public function body is invisible to it, and this package is unusually exposed to that: the floor
-arithmetic in `VersionNumberHandler.versionUpdateIsRequired` decides exactly which devices get
-forced, and `Skills/NnVersionKit/skills/NnVersionKit/VersionModelApi.md` documents that arithmetic
-down to the worked example. Change the rule and the check scores `api: 0` while the skill goes
-wrong. Treat it as a floor, not a guarantee.
+**A PR that changes the public API must also touch `Skills/`.** There is no CI workflow enforcing
+this rule. Review behavior changes as well as declarations: the floor arithmetic in
+`VersionNumberHandler.versionUpdateIsRequired` decides exactly which devices get forced, and
+`Skills/NnVersionKit/skills/NnVersionKit/VersionModelApi.md` documents that arithmetic down to the
+worked example.
 
 ### `plugin.json` deliberately has no `version`
 
@@ -97,7 +91,7 @@ wrong. Treat it as a floor, not a guarantee.
 marketplace installs this skill from a git source and keys its cache by commit sha, so a hand-typed
 version number is a second thing to remember and the exact stale-number problem this arrangement
 exists to remove. Do not reintroduce it. The pinned `ref` in the marketplace manifest is the real
-version marker, and that one is bumped automatically.
+version marker.
 
 ## Releasing
 
@@ -109,28 +103,10 @@ Because it is pinned, **doc changes ship on release, not on merge.** Merging a c
 `Skills/` changes nothing for anyone reading the skill until the next tag. That surprises people —
 it is the intended trade (docs always match a shipped version), not a bug.
 
-`.github/workflows/skill-ref-bump.yml` handles the bump: on any tag push it rewrites the entry's
-`ref` in the marketplace manifest and opens a PR there. It can also be run manually with
-`gh workflow run skill-ref-bump.yml -f tag=<tag>`.
-
-**If that automation is ever removed, the bump becomes a manual cross-repo step**, and the failure
-mode is silent: the marketplace keeps serving the previously pinned release's documentation forever.
-Nothing errors and nothing warns — consumers simply read old docs.
+**The marketplace `ref` bump is a manual cross-repo step.** Update the entry in
+`nikolainobadi/nn-swift-skills` to the release tag; this repo has no workflow that opens that PR.
+Until the marketplace update merges, consumers keep reading the previously pinned release's
+documentation.
 
 Tags in this repo are unprefixed (`2.0.0`, not `v2.0.0`); `v1.0.0` is a legacy exception.
 
-### The `MARKETPLACE_TOKEN` secret
-
-The bump workflow authenticates with the repo secret `MARKETPLACE_TOKEN` — a **fine-grained PAT
-named `nn-swift-skills-ref-bump`**, granting `contents:write` and `pull-requests:write` on
-`nikolainobadi/nn-swift-skills` and nothing else.
-
-- It is **shared across every package repo** publishing to `nn-swift-skills` (SwiftPickerKit,
-  NnArgumentParser, NnTestKit, NnShellKit, NnFileKit, NnSwiftUIKit, this one). The grant is identical
-  in each, so a per-repo token would buy no isolation and cost another expiry to track.
-- **Expiry:** _record the expiry date here when the token is next rotated._ When it lapses, the bump
-  fails in **every** repo holding it — so a failed run reads as "rotate the shared token", not "this
-  repo's workflow is broken." Rotation means re-running `set-marketplace-token.sh` against every
-  package repo.
-- GitHub secrets are **write-only.** The value cannot be read back from a repo that already has it;
-  adding a new repo needs the saved token file.
