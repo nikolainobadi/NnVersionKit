@@ -1,10 +1,3 @@
-//
-//  AppStoreVersionLoader.swift
-//  NnVersionKit
-//
-//  Created by Nikolai Nobadi on 4/3/25.
-//
-
 import Foundation
 
 /// A version loader that retrieves the latest app version from the App Store using the app’s bundle identifier.

@@ -1,10 +1,3 @@
-//
-//  VersionNumberHandlerTests.swift
-//  NnVersionKit
-//
-//  Created by Nikolai Nobadi on 4/4/25.
-//
-
 import Testing
 @testable import NnVersionKit
 

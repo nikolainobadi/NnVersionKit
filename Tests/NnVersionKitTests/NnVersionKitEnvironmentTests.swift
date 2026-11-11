@@ -1,10 +1,3 @@
-//
-//  NnVersionKitEnvironmentTests.swift
-//  NnVersionKit
-//
-//  Created by Nikolai Nobadi on 6/19/25.
-//
-
 import Testing
 @testable import NnVersionKit
 

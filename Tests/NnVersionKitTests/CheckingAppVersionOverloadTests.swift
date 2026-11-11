@@ -1,9 +1,3 @@
-//
-//  CheckingAppVersionOverloadTests.swift
-//  NnVersionKit
-//
-//  Created by Nikolai Nobadi on 6/19/25.
-//
 //  Compile-only coverage: confirms the presenting and report-only `checkingAppVersion`
 //  overloads resolve unambiguously at the call site.
 

@@ -1,10 +1,3 @@
-//
-//  VersionUpdatePolicy.swift
-//  NnVersionKit
-//
-//  Created by Nikolai Nobadi on 6/19/25.
-//
-
 /// Determines how far behind the latest version a device may fall before an update is forced.
 ///
 /// A new major version always forces an update under every policy, because a major bump is a

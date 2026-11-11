@@ -1,10 +1,3 @@
-//
-//  StaticVersionLoader.swift
-//  NnVersionKit
-//
-//  Created by Nikolai Nobadi on 6/19/25.
-//
-
 /// A `VersionLoader` that returns a fixed version number.
 ///
 /// Useful for driving the update check deterministically in UI tests, and for any source where the
