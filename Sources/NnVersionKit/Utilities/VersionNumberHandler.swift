@@ -1,10 +1,3 @@
-//
-//  VersionNumberHandler.swift
-//  NnVersionKit
-//
-//  Created by Nikolai Nobadi on 4/3/25.
-//
-
 import Foundation
 
 /// Utility methods for creating and comparing semantic version numbers.

@@ -1,10 +1,3 @@
-//
-//  DeviceBundleVersionLoader.swift
-//  NnVersionKit
-//
-//  Created by Nikolai Nobadi on 4/3/25.
-//
-
 import Foundation
 
 /// A version loader that retrieves the app version from the local bundle.

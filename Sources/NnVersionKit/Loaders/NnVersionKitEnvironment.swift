@@ -1,10 +1,3 @@
-//
-//  NnVersionKitEnvironment.swift
-//  NnVersionKit
-//
-//  Created by Nikolai Nobadi on 6/19/25.
-//
-
 import Foundation
 
 /// Launch-environment seeding for UI tests.

@@ -1,10 +1,3 @@
-//
-//  VersionUpdateStatus.swift
-//  NnVersionKit
-//
-//  Created by Nikolai Nobadi on 6/19/25.
-//
-
 /// The outcome of comparing the device version against the latest online version under a `VersionUpdatePolicy`.
 public enum VersionUpdateStatus: Sendable, Equatable {
     /// The device is on the latest version or ahead of it. No update is available.

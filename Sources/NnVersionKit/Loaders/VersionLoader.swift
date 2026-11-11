@@ -1,10 +1,3 @@
-//
-//  VersionLoader.swift
-//  NnVersionKit
-//
-//  Created by Nikolai Nobadi on 4/4/25.
-//
-
 /// A protocol defining a loader that asynchronously retrieves a `VersionNumber`.
 public protocol VersionLoader: Sendable {
     /// Asynchronously loads a version number.

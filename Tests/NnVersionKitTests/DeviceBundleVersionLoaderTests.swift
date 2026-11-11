@@ -1,10 +1,3 @@
-//
-//  DeviceBundleVersionLoaderTests.swift
-//  NnVersionKit
-//
-//  Created by Nikolai Nobadi on 4/4/25.
-//
-
 import Testing
 import Foundation
 @testable import NnVersionKit

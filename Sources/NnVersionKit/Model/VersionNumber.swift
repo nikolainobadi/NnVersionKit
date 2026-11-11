@@ -1,10 +1,3 @@
-//
-//  VersionNumber.swift
-//  NnVersionKit
-//
-//  Created by Nikolai Nobadi on 4/3/25.
-//
-
 /// A value type representing a semantic version number (major.minor.patch).
 public struct VersionNumber: Equatable, Sendable {
     /// The major version number.

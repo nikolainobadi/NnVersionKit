@@ -1,10 +1,3 @@
-//
-//  VersionCheckViewModifier.swift
-//  NnVersionKit
-//
-//  Created by Nikolai Nobadi on 4/3/25.
-//
-
 import SwiftUI
 
 struct VersionCheckViewModifier<UpdateView: View>: ViewModifier {

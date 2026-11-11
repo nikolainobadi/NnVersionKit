@@ -63,7 +63,7 @@ error. Network failures from `AppStoreVersionLoader` propagate **unwrapped** rat
 
 ## Code Standards
 
-File headers follow `// FileName.swift / NnVersionKit / Created by Nikolai Nobadi on [date]`.
+Files carry no header comment block.
 Public API is marked `public` explicitly; private helpers are grouped under a
 `// MARK: - Private Methods` `private extension`. Public declarations carry doc comments with
 parameters and a `Throws:` clause where applicable.
